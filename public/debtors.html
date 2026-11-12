@@ -1,0 +1,642 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debtor Management | WIN Business Suite</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+
+    <style>
+        .debtors-container {
+            width: 92%;
+            max-width: 1250px;
+            margin: 35px auto;
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .eyebrow {
+            color: var(--win-blue);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .page-heading h1 {
+            margin: 8px 0;
+            color: var(--win-navy);
+            font-size: 30px;
+        }
+
+        .page-heading p {
+            color: var(--win-muted);
+            line-height: 1.6;
+        }
+
+        .back-dashboard {
+            color: var(--win-blue);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .debtor-stats,
+        .report-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            padding: 22px;
+            background: white;
+            border: 1px solid var(--win-border);
+            border-radius: 14px;
+        }
+
+        .stat-card p {
+            margin: 0;
+            color: var(--win-muted);
+            font-size: 13px;
+        }
+
+        .stat-card h2 {
+            margin: 12px 0 0;
+            color: var(--win-navy);
+            font-size: 25px;
+            overflow-wrap: anywhere;
+        }
+
+        .stat-card .stat-icon {
+            font-size: 22px;
+        }
+
+        .debtor-panel {
+            margin-top: 25px;
+            padding: 25px;
+            background: white;
+            border: 1px solid var(--win-border);
+            border-radius: 15px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .panel-heading h2 {
+            margin: 0;
+            color: var(--win-navy);
+            font-size: 21px;
+        }
+
+        .panel-heading p {
+            margin: 7px 0 0;
+            color: var(--win-muted);
+            font-size: 13px;
+        }
+
+        .debtor-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 17px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--win-text);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select,
+        .search-input {
+            width: 100%;
+            min-height: 45px;
+            padding: 11px 13px;
+            border: 1px solid var(--win-border);
+            border-radius: 8px;
+            background: white;
+            color: var(--win-text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 85px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus,
+        .search-input:focus {
+            border-color: var(--win-blue);
+            box-shadow: 0 0 0 3px rgba(8, 124, 240, 0.1);
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .form-actions button {
+            width: auto;
+            margin: 0;
+        }
+
+        .btn-outline {
+            padding: 13px 20px;
+            border: 1px solid var(--win-border);
+            border-radius: 9px;
+            background: white;
+            color: var(--win-text);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .debtor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .debtor-toolbar .search-input {
+            max-width: 380px;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .debtor-table {
+            width: 100%;
+            min-width: 750px;
+            border-collapse: collapse;
+        }
+
+        .debtor-table th,
+        .debtor-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--win-border);
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .debtor-table th {
+            color: var(--win-muted);
+            background: #f7faff;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .debtor-table td {
+            color: var(--win-text);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            background: #eef4fb;
+            color: #34516f;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-unpaid {
+            color: #b45309;
+            background: #fff7e6;
+        }
+
+        .status-partial {
+            color: #0759a5;
+            background: #eaf4ff;
+        }
+
+        .status-paid {
+            color: #15803d;
+            background: #eaf8ef;
+        }
+
+        .status-credit {
+            color: #6d28d9;
+            background: #f3eefe;
+        }
+
+        .table-empty {
+            padding: 35px 15px !important;
+            color: var(--win-muted) !important;
+            text-align: center !important;
+        }
+
+        .message-box {
+            min-height: 20px;
+            margin-top: 14px;
+            font-size: 13px;
+        }
+
+        .message-error {
+            color: #b42318;
+        }
+
+        .message-success {
+            color: #15803d;
+        }
+
+        /* DEBTOR REPORTS */
+
+        .report-filters {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 22px;
+        }
+
+        .report-filters .form-group {
+            min-width: 0;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+
+        .report-actions button {
+            width: auto;
+            margin: 0;
+        }
+
+        .report-summary {
+            padding: 17px;
+            margin-bottom: 20px;
+            background: #f7faff;
+            border: 1px solid var(--win-border);
+            border-radius: 10px;
+        }
+
+        .report-summary h3 {
+            margin: 0 0 7px;
+            color: var(--win-navy);
+            font-size: 17px;
+        }
+
+        .report-summary p {
+            margin: 0;
+            color: var(--win-muted);
+            font-size: 13px;
+        }
+
+        .report-stats {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-bottom: 22px;
+        }
+
+        .report-stats .stat-card {
+            padding: 17px;
+        }
+
+        .report-stats .stat-card h2 {
+            font-size: 21px;
+        }
+
+        .report-subheading {
+            margin: 25px 0 12px;
+            color: var(--win-navy);
+            font-size: 17px;
+        }
+
+        .report-status-list {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .report-status-item {
+            padding: 15px;
+            background: #f7faff;
+            border: 1px solid var(--win-border);
+            border-radius: 10px;
+        }
+
+        .report-status-item span {
+            display: block;
+            color: var(--win-muted);
+            font-size: 12px;
+        }
+
+        .report-status-item strong {
+            display: block;
+            margin-top: 8px;
+            color: var(--win-navy);
+            font-size: 21px;
+        }
+
+        .report-message {
+            min-height: 20px;
+            margin: 12px 0;
+            font-size: 13px;
+        }
+
+        .report-hidden {
+            display: none !important;
+        }
+
+        .debtor-footer {
+            margin-top: 40px;
+            padding: 20px 0;
+            border-top: 1px solid var(--win-border);
+            color: var(--win-muted);
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .debtor-stats,
+            .report-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .report-status-list {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .debtors-container {
+                width: 94%;
+                margin: 22px auto;
+            }
+
+            .debtor-panel {
+                padding: 18px 14px;
+            }
+
+            .debtor-form-grid,
+            .report-filters {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: auto;
+            }
+
+            .page-heading h1 {
+                font-size: 25px;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .stat-card h2 {
+                font-size: 21px;
+            }
+
+            .debtor-toolbar .search-input {
+                max-width: none;
+            }
+
+            .form-actions button,
+            .report-actions button {
+                width: 100%;
+            }
+
+            .report-status-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+
+        <div class="nav-actions">
+            <span id="userName">Loading...</span>
+            <button id="logoutButton" class="btn-secondary" type="button">
+                Log Out
+            </button>
+        </div>
+    </nav>
+
+    <main class="debtors-container">
+
+        <div class="page-heading">
+            <div>
+                <div class="eyebrow">BUSINESS MANAGEMENT</div>
+                <h1>Debtor Management</h1>
+                <p>Manage credit customers, goods taken, payments and outstanding balances.</p>
+            </div>
+
+            <a href="/dashboard.html" class="back-dashboard">
+                ← Back to Dashboard
+            </a>
+        </div>
+
+        <!-- DEBTOR SUMMARY -->
+
+        <section class="debtor-stats">
+
+            <div class="stat-card">
+                <div class="stat-icon">♙</div>
+                <p>Total Debtors</p>
+                <h2 id="totalDebtors">--</h2>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📒</div>
+                <p>Total Outstanding Debt</p>
+                <h2 id="totalOutstanding">--</h2>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">✓</div>
+                <p>Total Payments Received</p>
+                <h2 id="totalPayments">--</h2>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💳</div>
+                <p>Customer Credit</p>
+                <h2 id="totalCustomerCredit">--</h2>
+            </div>
+
+        </section>
+
+        <!-- REGISTER DEBTOR -->
+
+        <section class="debtor-panel" id="registerDebtorPanel">
+
+            <div class="panel-heading">
+                <div>
+                    <h2>Register New Debtor</h2>
+                    <p>Create an account for a customer who may take goods on credit.</p>
+                </div>
+            </div>
+
+            <form id="debtorForm">
+
+                <div class="debtor-form-grid">
+
+                    <div class="form-group">
+                        <label for="fullName">Customer / Institution Name *</label>
+                        <input type="text" id="fullName" name="full_name"
+                               placeholder="Enter full name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone"
+                               placeholder="e.g. 07XXXXXXXX">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email"
+                               placeholder="Optional email address">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address / Location</label>
+                        <input type="text" id="address" name="address"
+                               placeholder="Enter location">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creditLimit">Credit Limit (KSh)</label>
+                        <input type="number" id="creditLimit" name="credit_limit"
+                               min="0" step="0.01" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Private Notes</label>
+                        <textarea id="notes" name="notes"
+                                  placeholder="Optional notes about this customer"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="saveDebtorButton">
+                        Register Debtor
+                    </button>
+
+                    <button type="reset" class="btn-outline">
+                        Clear Form
+                    </button>
+                </div>
+
+                <div id="debtorFormMessage" class="message-box" aria-live="polite"></div>
+
+            </form>
+
+        </section>
+
+        <!-- DEBTOR LIST -->
+
+        <section class="debtor-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h2>Debtor Accounts</h2>
+                    <p>View and manage your registered credit customers.</p>
+                </div>
+            </div>
+
+            <div class="debtor-toolbar">
+
+                <input type="search" id="debtorSearch" class="search-input"
+                       placeholder="Search by customer name or phone..."
+                       aria-label="Search debtors">
+
+                <select id="statusFilter" class="search-input" style="max-width: 190px;">
+                    <option value="">All Statuses</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partially_paid">Partially Paid</option>
+                    <option value="paid">Fully Paid</option>
+                    <option value="customer_credit">Customer Credit</option>
+                    <option value="no_activity">No Activity</option>
+                </select>
+
+            </div>
+
+            <div class="table-wrapper">
+                <table class="debtor-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Total Debt</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="debtorsTableBody">
+                        <tr>
+                            <td colspan="7" class="table-empty">
+                                Debtor accounts will appear here.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="debtorListMessage" class="message-box" aria-live="polite"></div>
+
+        </section>
+
+        <!-- DEBTOR REPORTS -->
+
+
+
+        <footer class="debtor-footer">
+            <span>WIN Business Suite © 2026</span>
+            <span>Manage Everything. Grow Smarter.</span>
+        </footer>
+
+    </main>
+
+    <script src="/js/debtors.js"></script>
+
+</body>
+</html>

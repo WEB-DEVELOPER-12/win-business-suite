@@ -1,0 +1,731 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Notebook | WIN Business Suite</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+
+    <style>
+        .notebook-container {
+            width: 92%;
+            max-width: 1250px;
+            margin: 35px auto;
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .eyebrow {
+            color: var(--win-blue);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .page-heading h1 {
+            margin: 8px 0;
+            color: var(--win-navy);
+            font-size: 28px;
+        }
+
+        .page-heading p {
+            color: var(--win-muted);
+            line-height: 1.6;
+        }
+
+        .back-link {
+            color: var(--win-blue);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 18px;
+            padding: 24px;
+            background: white;
+            border: 1px solid var(--win-border);
+            border-radius: 15px;
+        }
+
+        .customer-details h2 {
+            margin: 0 0 9px;
+            color: var(--win-navy);
+            font-size: 23px;
+        }
+
+        .customer-details p {
+            margin: 5px 0;
+            color: var(--win-muted);
+            font-size: 13px;
+        }
+
+        .customer-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .whatsapp-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 17px;
+            border: none;
+            border-radius: 9px;
+            background: #168c50;
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .notebook-stats {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 16px;
+            margin: 22px 0;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: white;
+            border: 1px solid var(--win-border);
+            border-radius: 13px;
+        }
+
+        .stat-card p {
+            margin: 0;
+            color: var(--win-muted);
+            font-size: 13px;
+        }
+
+        .stat-card h2 {
+            margin: 12px 0 0;
+            color: var(--win-navy);
+            font-size: 23px;
+            overflow-wrap: anywhere;
+        }
+
+        .notebook-panel {
+            margin-top: 22px;
+            padding: 24px;
+            background: white;
+            border: 1px solid var(--win-border);
+            border-radius: 15px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-heading h2 {
+            margin: 0;
+            color: var(--win-navy);
+            font-size: 20px;
+        }
+
+        .panel-heading p {
+            margin: 6px 0 0;
+            color: var(--win-muted);
+            font-size: 13px;
+        }
+
+        .notebook-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .notebook-tab {
+            padding: 10px 17px;
+            border: 1px solid var(--win-border);
+            border-radius: 8px;
+            background: white;
+            color: var(--win-text);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .notebook-tab.active {
+            border-color: var(--win-blue);
+            background: #eaf4ff;
+            color: var(--win-blue);
+        }
+
+        .notebook-content {
+            min-height: 100px;
+        }
+
+        .notebook-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .notebook-table {
+            width: 100%;
+            min-width: 650px;
+            border-collapse: collapse;
+        }
+
+        .notebook-table th,
+        .notebook-table td {
+            padding: 13px 11px;
+            border-bottom: 1px solid var(--win-border);
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .notebook-table th {
+            background: #f7faff;
+            color: var(--win-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .empty-state {
+            padding: 25px 15px;
+            color: var(--win-muted);
+            text-align: center;
+        }
+
+        .message-box {
+            min-height: 20px;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .message-error {
+            color: #b42318;
+        }
+
+        .message-success {
+            color: #15803d;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .form-group label {
+            color: var(--win-navy);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--win-border);
+            border-radius: 8px;
+            background: white;
+            color: var(--win-text);
+            font: inherit;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            min-height: 75px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 17px;
+        }
+
+        .form-button {
+            padding: 11px 18px;
+            border: none;
+            border-radius: 8px;
+            background: var(--win-blue);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .form-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .secondary-form-button {
+            padding: 10px 15px;
+            border: 1px solid var(--win-border);
+            border-radius: 8px;
+            background: white;
+            color: var(--win-navy);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .product-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 13px;
+            padding: 14px;
+            border: 1px solid var(--win-border);
+            border-radius: 10px;
+        }
+
+        .product-row-total {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--win-navy);
+            padding-bottom: 12px;
+        }
+
+        .remove-product-button {
+            padding: 9px 11px;
+            border: 1px solid #f1caca;
+            border-radius: 7px;
+            background: #fff5f5;
+            color: #b42318;
+            cursor: pointer;
+        }
+
+        .transaction-total {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 9px;
+            background: #f1f7ff;
+            color: var(--win-navy);
+            font-weight: 800;
+        }
+
+        .payment-history-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .payment-summary-item {
+            padding: 15px;
+            border: 1px solid var(--win-border);
+            border-radius: 10px;
+        }
+
+        .payment-summary-item p {
+            margin: 0;
+            color: var(--win-muted);
+            font-size: 12px;
+        }
+
+        .payment-summary-item h3 {
+            margin: 8px 0 0;
+            color: var(--win-navy);
+        }
+
+        .notebook-footer {
+            margin-top: 35px;
+            padding: 20px 0;
+            border-top: 1px solid var(--win-border);
+            color: var(--win-muted);
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        @media (max-width: 1100px) {
+            .notebook-stats {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 900px) {
+            .notebook-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 650px) {
+            .product-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .product-row .product-select {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .notebook-container {
+                width: 94%;
+                margin: 22px auto;
+            }
+
+            .customer-header,
+            .notebook-panel {
+                padding: 18px 14px;
+            }
+
+            .page-heading h1 {
+                font-size: 24px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-card h2 {
+                font-size: 19px;
+            }
+
+            .customer-actions,
+            .whatsapp-button {
+                width: 100%;
+            }
+
+            .form-grid,
+            .payment-history-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+
+        <div class="nav-actions">
+            <span id="userName">Loading...</span>
+            <button id="logoutButton" class="btn-secondary" type="button">
+                Log Out
+            </button>
+        </div>
+    </nav>
+
+    <main class="notebook-container">
+
+        <div class="page-heading">
+            <div>
+                <div class="eyebrow">DEBTOR MANAGEMENT</div>
+                <h1>Customer Notebook</h1>
+                <p>Individual credit account and transaction records.</p>
+            </div>
+
+            <a href="/debtors.html" class="back-link">
+                ← Back to Debtor Accounts
+            </a>
+        </div>
+
+        <section class="customer-header">
+            <div class="customer-details">
+                <h2 id="customerName">Loading customer...</h2>
+                <p id="customerPhone">Phone: --</p>
+                <p id="customerEmail">Email: --</p>
+                <p id="customerAddress">Address: --</p>
+                <p id="customerCreditStatus">Credit status: --</p>
+            </div>
+
+            <div class="customer-actions">
+                <a
+                    href="#"
+                    id="whatsappStatementButton"
+                    class="whatsapp-button"
+                    aria-label="Prepare customer statement on WhatsApp"
+                >
+                    <span aria-hidden="true">◉</span>
+                    WhatsApp Statement
+                </a>
+            </div>
+        </section>
+
+        <section class="notebook-stats">
+            <div class="stat-card">
+                <p>Total Goods Taken</p>
+                <h2 id="customerTotalDebt">KSh 0.00</h2>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Payments</p>
+                <h2 id="customerTotalPaid">KSh 0.00</h2>
+            </div>
+
+            <div class="stat-card">
+                <p>Outstanding Balance</p>
+                <h2 id="customerBalance">KSh 0.00</h2>
+            </div>
+
+            <div class="stat-card">
+                <p>Customer Credit</p>
+                <h2 id="customerCredit">KSh 0.00</h2>
+            </div>
+
+            <div class="stat-card">
+                <p>Available Credit Limit</p>
+                <h2 id="customerAvailableCredit">KSh 0.00</h2>
+            </div>
+        </section>
+
+        <section class="notebook-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Account Notebook</h2>
+                    <p>Goods taken and payments recorded for this customer.</p>
+                </div>
+            </div>
+
+            <div class="notebook-tabs">
+                <button type="button" class="notebook-tab active" id="allRecordsTab">
+                    All Records
+                </button>
+
+                <button type="button" class="notebook-tab" id="dailyRecordsTab">
+                    Daily Notebook
+                </button>
+
+                <button type="button" class="notebook-tab" id="monthlyRecordsTab">
+                    Monthly Notebook
+                </button>
+
+                <button type="button" class="notebook-tab" id="yearlyRecordsTab">
+                    Yearly History
+                </button>
+            </div>
+
+            <div
+                id="dailyDateControls"
+                class="form-group"
+                style="max-width:260px; margin-bottom:18px; display:none;"
+            >
+                <label for="dailyNotebookDate">Select notebook date</label>
+                <input type="date" id="dailyNotebookDate">
+            </div>
+
+            <div id="notebookContent" class="notebook-content">
+                <div class="notebook-table-wrapper">
+                    <table class="notebook-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Record</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="customerRecordsBody">
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    Customer records will appear here.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="notebookMessage" class="message-box" aria-live="polite"></div>
+        </section>
+
+        <section class="notebook-panel" id="creditTransactionSection">
+            <div class="panel-heading">
+                <div>
+                    <h2>Goods Taken on Credit</h2>
+                    <p>Select products from your inventory and record what this customer takes.</p>
+                </div>
+            </div>
+
+            <form id="creditTransactionForm">
+                <div id="creditProductsContainer">
+                    <div class="product-row" data-product-row>
+                        <div class="form-group product-select">
+                            <label>Inventory Product</label>
+                            <select class="credit-product-select" required>
+                                <option value="">Loading products...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input
+                                type="number"
+                                class="credit-product-quantity"
+                                min="0.01"
+                                step="0.01"
+                                value="1"
+                                required
+                            >
+                        </div>
+
+                        <div class="product-row-total">
+                            <span>Line total</span>
+                            <div class="credit-line-total">KSh 0.00</div>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="remove-product-button"
+                            disabled
+                            aria-label="Remove product"
+                        >
+                            Remove
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="secondary-form-button"
+                    id="addCreditProductButton"
+                >
+                    + Add Another Product
+                </button>
+
+                <div class="transaction-total">
+                    <span>Total Goods Taken</span>
+                    <span id="creditTransactionTotal">KSh 0.00</span>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label for="creditTransactionNotes">Notes (optional)</label>
+                    <textarea
+                        id="creditTransactionNotes"
+                        placeholder="Additional transaction notes"
+                    ></textarea>
+                </div>
+
+                <div id="creditTransactionMessage" class="message-box" aria-live="polite"></div>
+
+                <div class="form-actions">
+                    <button type="submit" class="form-button" id="saveCreditTransactionButton">
+                        Save Goods Taken
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="notebook-panel" id="paymentSection">
+            <div class="panel-heading">
+                <div>
+                    <h2>Record Payment</h2>
+                    <p>Enter how much the customer has paid.</p>
+                </div>
+            </div>
+
+            <div class="payment-history-summary">
+                <div class="payment-summary-item">
+                    <p>Total Payments Received</p>
+                    <h3 id="paymentHistoryTotal">KSh 0.00</h3>
+                </div>
+
+                <div class="payment-summary-item">
+                    <p>Current Outstanding Balance</p>
+                    <h3 id="paymentHistoryBalance">KSh 0.00</h3>
+                </div>
+            </div>
+
+            <form id="paymentForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="paymentAmount">Amount Paid (KSh)</label>
+                        <input
+                            type="number"
+                            id="paymentAmount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="Enter amount paid"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paymentMethod">Payment Method</label>
+                        <select id="paymentMethod" required>
+                            <option value="cash">Cash</option>
+                            <option value="mpesa">M-Pesa</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paymentDate">Payment Date</label>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paymentReference">Reference (optional)</label>
+                        <input
+                            type="text"
+                            id="paymentReference"
+                            placeholder="M-Pesa code or other reference"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label for="paymentNotes">Notes (optional)</label>
+                    <textarea
+                        id="paymentNotes"
+                        placeholder="Additional payment notes"
+                    ></textarea>
+                </div>
+
+                <div id="paymentMessage" class="message-box" aria-live="polite"></div>
+
+                <div class="form-actions">
+                    <button type="submit" class="form-button" id="savePaymentButton">
+                        Save Payment
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <footer class="notebook-footer">
+            <span>WIN Business Suite © 2026</span>
+            <span>Manage Everything. Grow Smarter.</span>
+        </footer>
+
+    </main>
+
+    <script src="/js/debtor-profile.js"></script>
+    <script src="/js/debtor-daily-summary.js"></script>
+    <script src="/js/debtor-period-notebooks.js"></script>
+
+</body>
+</html>
