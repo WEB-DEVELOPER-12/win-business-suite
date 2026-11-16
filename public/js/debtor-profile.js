@@ -12,6 +12,11 @@ let payments = [];
 let inventoryProducts = [];
 let activeTab = "all";
 let selectedDailyDate = "";
+let currencyCode = "KES";
+
+let notebookRequestNumber = 0;
+let creditSaving = false;
+let paymentSaving = false;
 
 const elements = {
     userName: document.getElementById("userName"),
@@ -63,13 +68,31 @@ const elements = {
     paymentHistoryBalance: document.getElementById("paymentHistoryBalance")
 };
 
-function formatMoney(value) {
-    const amount = Number(value) || 0;
+// GENERAL HELPERS
 
-    return "KSh " + amount.toLocaleString("en-KE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+function roundMoney(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return 0;
+    }
+
+    return Math.round((number + Number.EPSILON) * 100) / 100;
+}
+
+function formatMoney(value) {
+    const amount = roundMoney(value);
+
+    try {
+        return new Intl.NumberFormat("en-KE", {
+            style: "currency",
+            currency: currencyCode,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    } catch {
+        return `${currencyCode} ${amount.toFixed(2)}`;
+    }
 }
 
 function escapeHTML(value) {
@@ -87,7 +110,7 @@ function escapeHTML(value) {
 }
 
 function getNairobiDate() {
-    const parts = new Intl.DateTimeFormat("en-CA", {
+    const parts = new Intl.DateTimeFormat("en-GB", {
         timeZone: "Africa/Nairobi",
         year: "numeric",
         month: "2-digit",
@@ -96,69 +119,64 @@ function getNairobiDate() {
 
     const values = {};
 
-    parts.forEach(part => {
-        values[part.type] = part.value;
-    });
+    for (const part of parts) {
+        if (part.type !== "literal") {
+            values[part.type] = part.value;
+        }
+    }
 
     return `${values.year}-${values.month}-${values.day}`;
-}
-
-function setPaymentDateLimit() {
-    if (!elements.paymentDate) return;
-
-    const today = getNairobiDate();
-
-    elements.paymentDate.max = today;
-
-    if (!elements.paymentDate.value ||
-        elements.paymentDate.value > today) {
-        elements.paymentDate.value = today;
-    }
-}
-
-function initializeDailyDateSelector() {
-    if (!elements.dailyNotebookDate) return;
-
-    const today = getNairobiDate();
-
-    selectedDailyDate = today;
-    elements.dailyNotebookDate.max = today;
-    elements.dailyNotebookDate.value = today;
 }
 
 function formatDate(dateValue) {
     if (!dateValue) return "--";
 
-    const parts = String(dateValue).split("-");
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(
+        String(dateValue)
+    );
 
-    if (parts.length !== 3) {
+    if (!match) {
         return escapeHTML(dateValue);
     }
 
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
 function showMessage(message, type = "error") {
-    if (!elements.notebookMessage) return;
+    const element = elements.notebookMessage;
 
-    elements.notebookMessage.textContent = message;
-    elements.notebookMessage.className =
-        `message-box ${type === "success" ? "message-success" : "message-error"}`;
+    if (!element) return;
+
+    element.textContent = message;
+    element.className = "message-box";
+
+    if (type === "success") {
+        element.classList.add("message-success");
+    } else if (type === "error") {
+        element.classList.add("message-error");
+    }
 }
 
 function clearMessage() {
-    if (!elements.notebookMessage) return;
+    const element = elements.notebookMessage;
 
-    elements.notebookMessage.textContent = "";
-    elements.notebookMessage.className = "message-box";
+    if (!element) return;
+
+    element.textContent = "";
+    element.className = "message-box";
 }
 
 function showFormMessage(element, message, type = "error") {
     if (!element) return;
 
     element.textContent = message;
-    element.className =
-        `message-box ${type === "success" ? "message-success" : "message-error"}`;
+    element.className = "message-box";
+
+    if (type === "success") {
+        element.classList.add("message-success");
+    } else if (type === "error") {
+        element.classList.add("message-error");
+    }
 }
 
 async function apiRequest(url, options = {}) {
@@ -166,7 +184,9 @@ async function apiRequest(url, options = {}) {
         credentials: "same-origin",
         ...options,
         headers: {
-            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...(options.body
+                ? { "Content-Type": "application/json" }
+                : {}),
             ...(options.headers || {})
         }
     });
@@ -191,6 +211,29 @@ async function apiRequest(url, options = {}) {
     return data;
 }
 
+function setCurrencyFromAccount(data) {
+    const candidates = [
+        data?.business?.currency,
+        data?.user?.business?.currency,
+        data?.user?.business_currency,
+        data?.user?.currency,
+        data?.data?.business?.currency,
+        data?.business_currency,
+        data?.currency
+    ];
+
+    const selected = candidates.find(value =>
+        typeof value === "string" &&
+        /^[A-Za-z]{3}$/.test(value.trim())
+    );
+
+    if (selected) {
+        currencyCode = selected.trim().toUpperCase();
+    }
+}
+
+// ACCOUNT
+
 async function loadAccount() {
     try {
         const data = await apiRequest("/api/auth/me");
@@ -201,63 +244,123 @@ async function loadAccount() {
                 data.full_name ||
                 "Account";
         }
+
+        setCurrencyFromAccount(data);
+
+        if (currentDebtor) {
+            displayDebtor(currentDebtor);
+            renderRecords();
+            updateProductRows();
+        }
     } catch (error) {
-        console.error("Account loading error:", error.message);
+        console.error("Account loading error:", error);
     }
 }
 
 async function logout() {
+    if (!confirm("Are you sure you want to log out?")) {
+        return;
+    }
+
     try {
-        await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "same-origin"
+        await apiRequest("/api/auth/logout", {
+            method: "POST"
         });
 
         window.location.href = "/login.html";
-    } catch {
-        alert("Could not log out. Please try again.");
+    } catch (error) {
+        alert(error.message || "Could not log out. Please try again.");
     }
 }
 
+// DATE CONTROLS
+
+function setPaymentDateLimit() {
+    if (!elements.paymentDate) return;
+
+    const today = getNairobiDate();
+
+    elements.paymentDate.min = today;
+    elements.paymentDate.max = today;
+    elements.paymentDate.value = today;
+}
+
+function initializeDailyDateSelector() {
+    if (!elements.dailyNotebookDate) return;
+
+    const today = getNairobiDate();
+
+    selectedDailyDate = today;
+    elements.dailyNotebookDate.max = today;
+    elements.dailyNotebookDate.value = today;
+}
+
+// CUSTOMER PROFILE
+
 function calculateAvailableCredit(debtor) {
-    const limit = Number(debtor.credit_limit) || 0;
-    const balance = Number(debtor.balance) || 0;
+    const limit = Math.max(0, Number(debtor.credit_limit) || 0);
+    const balance = Math.max(0, Number(debtor.balance) || 0);
 
     if (limit <= 0) {
         return "No limit";
     }
 
-    return formatMoney(Math.max(0, limit - balance));
+    return formatMoney(Math.max(0, roundMoney(limit - balance)));
 }
 
 function displayDebtor(debtor) {
     currentDebtor = debtor;
 
-    elements.customerName.textContent = debtor.full_name || "Unnamed customer";
-    elements.customerPhone.textContent =
-        `Phone: ${debtor.phone || "Not provided"}`;
+    if (elements.customerName) {
+        elements.customerName.textContent =
+            debtor.full_name || "Unnamed customer";
+    }
 
-    elements.customerEmail.textContent =
-        `Email: ${debtor.email || "Not provided"}`;
+    if (elements.customerPhone) {
+        elements.customerPhone.textContent =
+            `Phone: ${debtor.phone || "Not provided"}`;
+    }
 
-    elements.customerAddress.textContent =
-        `Address: ${debtor.address || "Not provided"}`;
+    if (elements.customerEmail) {
+        elements.customerEmail.textContent =
+            `Email: ${debtor.email || "Not provided"}`;
+    }
 
-    const creditEnabled = Number(debtor.credit_enabled) === 1;
+    if (elements.customerAddress) {
+        elements.customerAddress.textContent =
+            `Address: ${debtor.address || "Not provided"}`;
+    }
 
-    elements.customerCreditStatus.textContent =
-        `Credit status: ${creditEnabled ? "Enabled" : "Disabled"}`;
+    const creditEnabled =
+        debtor.credit_enabled === true ||
+        Number(debtor.credit_enabled) === 1;
 
-    elements.totalDebt.textContent = formatMoney(debtor.total_debt);
-    elements.totalPaid.textContent = formatMoney(debtor.total_paid);
-    elements.balance.textContent = formatMoney(debtor.balance);
+    if (elements.customerCreditStatus) {
+        elements.customerCreditStatus.textContent =
+            `Credit status: ${creditEnabled ? "Enabled" : "Disabled"}`;
+    }
+
+    if (elements.totalDebt) {
+        elements.totalDebt.textContent = formatMoney(debtor.total_debt);
+    }
+
+    if (elements.totalPaid) {
+        elements.totalPaid.textContent = formatMoney(debtor.total_paid);
+    }
+
+    if (elements.balance) {
+        elements.balance.textContent = formatMoney(debtor.balance);
+    }
 
     if (elements.customerCredit) {
         elements.customerCredit.textContent =
             formatMoney(debtor.customer_credit);
     }
 
-    elements.availableCredit.textContent = calculateAvailableCredit(debtor);
+    if (elements.availableCredit) {
+        elements.availableCredit.textContent =
+            calculateAvailableCredit(debtor);
+    }
 
     if (elements.paymentHistoryTotal) {
         elements.paymentHistoryTotal.textContent =
@@ -270,23 +373,31 @@ function displayDebtor(debtor) {
     }
 }
 
+// NOTEBOOK RECORDS
+
 function createTransactionRecord(transaction) {
-    const itemDescription = (transaction.items || [])
-        .map(item => {
-            return `${escapeHTML(item.product_name)} × ${escapeHTML(item.quantity)} — ${formatMoney(item.line_total)}`;
-        })
-        .join("<br>");
+    const items = Array.isArray(transaction.items)
+        ? transaction.items
+        : [];
+
+    const itemDescription = items.map(item => {
+        return `${escapeHTML(item.product_name)} × ${escapeHTML(item.quantity)} — ${escapeHTML(formatMoney(item.line_total))}`;
+    }).join("<br>");
+
+    const plainDescription = items.map(item => {
+        return `${item.product_name} × ${item.quantity} — ${formatMoney(item.line_total)}`;
+    }).join(", ");
 
     return {
         date: transaction.transaction_date,
         type: "Goods taken",
         description:
-            itemDescription || escapeHTML(transaction.notes || "Credit transaction"),
-        plainDescription: (transaction.items || [])
-            .map(item =>
-                `${item.product_name} × ${item.quantity} — ${formatMoney(item.line_total)}`
-            )
-            .join(", ") || transaction.notes || "Credit transaction",
+            itemDescription ||
+            escapeHTML(transaction.notes || "Credit transaction"),
+        plainDescription:
+            plainDescription ||
+            transaction.notes ||
+            "Credit transaction",
         amount: Number(transaction.total_amount) || 0,
         kind: "transaction"
     };
@@ -305,14 +416,20 @@ function createPaymentRecord(payment) {
         "Payment";
 
     const details = [
-        method,
-        payment.reference ? `Reference: ${escapeHTML(payment.reference)}` : "",
-        payment.notes ? escapeHTML(payment.notes) : ""
+        escapeHTML(method),
+        payment.reference
+            ? `Reference: ${escapeHTML(payment.reference)}`
+            : "",
+        payment.notes
+            ? escapeHTML(payment.notes)
+            : ""
     ].filter(Boolean).join(" · ");
 
     const plainDetails = [
         method,
-        payment.reference ? `Reference: ${payment.reference}` : "",
+        payment.reference
+            ? `Reference: ${payment.reference}`
+            : "",
         payment.notes || ""
     ].filter(Boolean).join(" · ");
 
@@ -333,9 +450,16 @@ function getCombinedRecords() {
     ];
 
     return records.sort((a, b) => {
-        const dateComparison = String(b.date).localeCompare(String(a.date));
+        const dateComparison =
+            String(b.date || "").localeCompare(String(a.date || ""));
 
-        if (dateComparison !== 0) return dateComparison;
+        if (dateComparison !== 0) {
+            return dateComparison;
+        }
+
+        if (a.kind === b.kind) {
+            return 0;
+        }
 
         return a.kind === "transaction" ? -1 : 1;
     });
@@ -348,25 +472,23 @@ function getFilteredRecords() {
         return records;
     }
 
-    const today = getNairobiDate();
-    const currentMonthKey = today.slice(0, 7);
-    const currentYearKey = today.slice(0, 4);
-
     if (activeTab === "daily") {
         return records.filter(record =>
-            String(record.date) === selectedDailyDate
+            String(record.date || "").slice(0, 10) === selectedDailyDate
         );
     }
 
+    const today = getNairobiDate();
+
     if (activeTab === "monthly") {
         return records.filter(record =>
-            String(record.date).startsWith(currentMonthKey)
+            String(record.date || "").startsWith(today.slice(0, 7))
         );
     }
 
     if (activeTab === "yearly") {
         return records.filter(record =>
-            String(record.date).startsWith(currentYearKey)
+            String(record.date || "").startsWith(today.slice(0, 4))
         );
     }
 
@@ -374,6 +496,8 @@ function getFilteredRecords() {
 }
 
 function renderRecords() {
+    if (!elements.recordsBody) return;
+
     const records = getFilteredRecords();
 
     if (!records.length) {
@@ -409,7 +533,7 @@ function renderRecords() {
                 </td>
                 <td>${record.description}</td>
                 <td>
-                    <strong>${amountLabel}${formatMoney(record.amount)}</strong>
+                    <strong>${amountLabel}${escapeHTML(formatMoney(record.amount))}</strong>
                 </td>
             </tr>
         `;
@@ -430,6 +554,10 @@ function setActiveTab(tabName) {
         if (!button) return;
 
         button.classList.toggle("active", name === tabName);
+        button.setAttribute(
+            "aria-selected",
+            name === tabName ? "true" : "false"
+        );
     });
 
     if (elements.dailyDateControls) {
@@ -439,6 +567,8 @@ function setActiveTab(tabName) {
 
     renderRecords();
 }
+
+// WHATSAPP STATEMENT
 
 function normalizeKenyanPhone(phone) {
     let number = String(phone || "").replace(/\D/g, "");
@@ -465,19 +595,23 @@ function prepareWhatsAppStatement() {
     const phone = normalizeKenyanPhone(currentDebtor.phone);
 
     if (!phone) {
-        showMessage("This customer does not have a valid Kenyan phone number.");
+        showMessage(
+            "This customer does not have a valid Kenyan phone number."
+        );
         return;
     }
 
     const records = getCombinedRecords();
 
     const goods = transactions.reduce(
-        (total, transaction) => total + Number(transaction.total_amount || 0),
+        (total, transaction) =>
+            total + (Number(transaction.total_amount) || 0),
         0
     );
 
     const paid = payments.reduce(
-        (total, payment) => total + Number(payment.amount || 0),
+        (total, payment) =>
+            total + (Number(payment.amount) || 0),
         0
     );
 
@@ -556,7 +690,7 @@ function getProductOptions(selectedId = "") {
                 ${Number(selectedId) === Number(product.id) ? "selected" : ""}
             >
                 ${escapeHTML(product.product_name)}
-                — ${formatMoney(product.selling_price)}
+                — ${escapeHTML(formatMoney(product.selling_price))}
                 — Stock: ${escapeHTML(product.stock_quantity)}
             </option>
         `).join("")}
@@ -591,7 +725,7 @@ function createProductRow() {
 
         <div class="product-row-total">
             <span>Line total</span>
-            <div class="credit-line-total">KSh 0.00</div>
+            <div class="credit-line-total">${escapeHTML(formatMoney(0))}</div>
         </div>
 
         <button
@@ -616,11 +750,15 @@ function renderProductRows() {
 }
 
 function getSelectedProductIds(exceptRow = null) {
+    if (!elements.productsContainer) return [];
+
     return Array.from(
         elements.productsContainer.querySelectorAll(".product-row")
     )
         .filter(row => row !== exceptRow)
-        .map(row => Number(row.querySelector(".credit-product-select").value))
+        .map(row =>
+            Number(row.querySelector(".credit-product-select")?.value)
+        )
         .filter(id => id > 0);
 }
 
@@ -631,13 +769,18 @@ function updateProductRows() {
         elements.productsContainer.querySelectorAll(".product-row")
     );
 
+    let total = 0;
+
     rows.forEach(row => {
         const select = row.querySelector(".credit-product-select");
         const quantityInput = row.querySelector(".credit-product-quantity");
         const lineTotalElement = row.querySelector(".credit-line-total");
         const removeButton = row.querySelector(".remove-product-button");
 
+        if (!select || !quantityInput || !lineTotalElement) return;
+
         const productId = Number(select.value);
+
         const product = inventoryProducts.find(item =>
             Number(item.id) === productId
         );
@@ -645,9 +788,12 @@ function updateProductRows() {
         const quantity = Number(quantityInput.value) || 0;
 
         if (product && quantity > 0) {
-            lineTotalElement.textContent = formatMoney(
+            const lineTotal = roundMoney(
                 quantity * Number(product.selling_price)
             );
+
+            lineTotalElement.textContent = formatMoney(lineTotal);
+            total += lineTotal;
         } else {
             lineTotalElement.textContent = formatMoney(0);
         }
@@ -664,38 +810,28 @@ function updateProductRows() {
             }
         });
 
-        removeButton.disabled = rows.length === 1;
+        if (removeButton) {
+            removeButton.disabled = rows.length === 1;
+        }
     });
 
-    const total = rows.reduce((sum, row) => {
-        const productId = Number(
-            row.querySelector(".credit-product-select").value
-        );
-
-        const product = inventoryProducts.find(item =>
-            Number(item.id) === productId
-        );
-
-        const quantity = Number(
-            row.querySelector(".credit-product-quantity").value
-        ) || 0;
-
-        if (!product) return sum;
-
-        return sum + quantity * Number(product.selling_price);
-    }, 0);
-
-    elements.creditTotal.textContent = formatMoney(total);
+    if (elements.creditTotal) {
+        elements.creditTotal.textContent = formatMoney(total);
+    }
 }
 
 function addProductRow() {
-    const row = createProductRow();
+    if (!elements.productsContainer) return;
 
-    elements.productsContainer.appendChild(row);
+    elements.productsContainer.appendChild(createProductRow());
     updateProductRows();
 }
 
 function collectCreditItems() {
+    if (!elements.productsContainer) {
+        throw new Error("The product selection area is unavailable.");
+    }
+
     const rows = Array.from(
         elements.productsContainer.querySelectorAll(".product-row")
     );
@@ -704,11 +840,11 @@ function collectCreditItems() {
 
     for (const row of rows) {
         const productId = Number(
-            row.querySelector(".credit-product-select").value
+            row.querySelector(".credit-product-select")?.value
         );
 
         const quantity = Number(
-            row.querySelector(".credit-product-quantity").value
+            row.querySelector(".credit-product-quantity")?.value
         );
 
         if (!productId || !Number.isFinite(quantity) || quantity <= 0) {
@@ -720,7 +856,9 @@ function collectCreditItems() {
         );
 
         if (!product) {
-            throw new Error("One of the selected products is no longer available.");
+            throw new Error(
+                "One of the selected products is no longer available."
+            );
         }
 
         if (quantity > Number(product.stock_quantity)) {
@@ -730,7 +868,9 @@ function collectCreditItems() {
         }
 
         if (items.some(item => item.product_id === productId)) {
-            throw new Error("Please select each product only once per transaction.");
+            throw new Error(
+                "Please select each product only once per transaction."
+            );
         }
 
         items.push({
@@ -739,26 +879,42 @@ function collectCreditItems() {
         });
     }
 
+    if (!items.length) {
+        throw new Error("Add at least one product.");
+    }
+
     return items;
 }
+
+// RECORD GOODS TAKEN
 
 async function saveCreditTransaction(event) {
     event.preventDefault();
 
+    if (creditSaving) return;
+
     showFormMessage(elements.creditMessage, "");
 
     if (!currentDebtor) {
-        showFormMessage(elements.creditMessage, "Customer account is not loaded.");
+        showFormMessage(
+            elements.creditMessage,
+            "Customer account is not loaded."
+        );
         return;
     }
 
-    if (Number(currentDebtor.credit_enabled) !== 1) {
+    if (
+        currentDebtor.credit_enabled !== true &&
+        Number(currentDebtor.credit_enabled) !== 1
+    ) {
         showFormMessage(
             elements.creditMessage,
             "Credit is disabled for this customer."
         );
         return;
     }
+
+    if (!elements.saveCreditButton) return;
 
     let items;
 
@@ -769,110 +925,144 @@ async function saveCreditTransaction(event) {
         return;
     }
 
+    creditSaving = true;
     elements.saveCreditButton.disabled = true;
     elements.saveCreditButton.textContent = "Saving...";
 
     try {
-        await apiRequest(`${API_BASE}/${debtorId}/transactions`, {
-            method: "POST",
-            body: JSON.stringify({
-                items,
-                notes: elements.creditNotes.value.trim()
-            })
-        });
+        const result = await apiRequest(
+            `${API_BASE}/${debtorId}/transactions`,
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    items,
+                    notes: elements.creditNotes?.value.trim() || ""
+                })
+            }
+        );
 
         showFormMessage(
             elements.creditMessage,
-            "Goods taken recorded successfully. Inventory stock has been updated.",
+            result.message ||
+                "Goods taken recorded successfully. Inventory stock has been updated.",
             "success"
         );
 
-        elements.creditForm.reset();
-        elements.creditNotes.value = "";
+        if (elements.creditForm) {
+            elements.creditForm.reset();
+        }
+
+        if (elements.creditNotes) {
+            elements.creditNotes.value = "";
+        }
 
         await refreshNotebook();
         await loadInventoryProducts();
-
     } catch (error) {
         console.error("Credit transaction error:", error);
 
         showFormMessage(elements.creditMessage, error.message);
-
     } finally {
+        creditSaving = false;
         elements.saveCreditButton.disabled = false;
         elements.saveCreditButton.textContent = "Save Goods Taken";
     }
 }
 
-// CUSTOMER PAYMENTS
+// RECORD CUSTOMER PAYMENTS
 
 async function savePayment(event) {
     event.preventDefault();
 
+    if (paymentSaving) return;
+
     showFormMessage(elements.paymentMessage, "");
 
     if (!currentDebtor) {
-        showFormMessage(elements.paymentMessage, "Customer account is not loaded.");
+        showFormMessage(
+            elements.paymentMessage,
+            "Customer account is not loaded."
+        );
         return;
     }
+
+    if (!elements.savePaymentButton) return;
 
     const today = getNairobiDate();
 
     setPaymentDateLimit();
 
-    const amount = Number(elements.paymentAmount.value);
-    const paymentDate = elements.paymentDate.value;
-    const paymentMethod = elements.paymentMethod.value;
-    const reference = elements.paymentReference.value.trim();
-    const notes = elements.paymentNotes.value.trim();
+    const amount = Number(elements.paymentAmount?.value);
+    const paymentDate = elements.paymentDate?.value;
+    const paymentMethod = elements.paymentMethod?.value;
+    const reference = elements.paymentReference?.value.trim() || "";
+    const notes = elements.paymentNotes?.value.trim() || "";
 
     if (!Number.isFinite(amount) || amount <= 0) {
-        showFormMessage(elements.paymentMessage, "Enter a valid payment amount.");
+        showFormMessage(
+            elements.paymentMessage,
+            "Enter a valid payment amount."
+        );
         return;
     }
 
     if (!paymentDate) {
-        showFormMessage(elements.paymentMessage, "Select the payment date.");
-        return;
-    }
-
-    if (paymentDate > today) {
         showFormMessage(
             elements.paymentMessage,
-            "Future payment dates are not allowed. Select today or an earlier date."
+            "Select the payment date."
         );
-
-        elements.paymentDate.value = today;
         return;
     }
 
-    const balance = Number(currentDebtor.balance) || 0;
+    if (paymentDate !== today) {
+        showFormMessage(
+            elements.paymentMessage,
+            "Payments must be recorded using today's date."
+        );
 
-    let paymentType;
-
-    if (amount > balance) {
-        paymentType = "overpayment";
-    } else if (amount === balance) {
-        paymentType = "full";
-    } else {
-        paymentType = "partial";
+        setPaymentDateLimit();
+        return;
     }
 
+    if (!paymentMethod) {
+        showFormMessage(
+            elements.paymentMessage,
+            "Select a payment method."
+        );
+        return;
+    }
+
+    const balance = roundMoney(
+        Number(currentDebtor.balance) || 0
+    );
+
+    const roundedAmount = roundMoney(amount);
+
+    const paymentType = roundedAmount > balance
+        ? "overpayment"
+        : roundedAmount === balance
+            ? "full"
+            : "partial";
+
+    paymentSaving = true;
     elements.savePaymentButton.disabled = true;
     elements.savePaymentButton.textContent = "Saving...";
 
     try {
-        const result = await apiRequest(`${API_BASE}/${debtorId}/payments`, {
-            method: "POST",
-            body: JSON.stringify({
-                amount,
-                payment_type: paymentType,
-                payment_method: paymentMethod,
-                payment_date: paymentDate,
-                reference,
-                notes
-            })
-        });
+        const result = await apiRequest(
+            `${API_BASE}/${debtorId}/payments`,
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    amount: roundedAmount,
+                    payment_type: paymentType,
+                    payment_method: paymentMethod,
+                    payment_date: paymentDate,
+                    reference,
+                    notes
+                })
+            }
+        );
 
         showFormMessage(
             elements.paymentMessage,
@@ -880,17 +1070,19 @@ async function savePayment(event) {
             "success"
         );
 
-        elements.paymentForm.reset();
+        if (elements.paymentForm) {
+            elements.paymentForm.reset();
+        }
+
         setPaymentDateLimit();
 
         await refreshNotebook();
-
     } catch (error) {
         console.error("Payment recording error:", error);
 
         showFormMessage(elements.paymentMessage, error.message);
-
     } finally {
+        paymentSaving = false;
         elements.savePaymentButton.disabled = false;
         elements.savePaymentButton.textContent = "Save Payment";
     }
@@ -899,10 +1091,20 @@ async function savePayment(event) {
 // LOAD AND REFRESH CUSTOMER NOTEBOOK
 
 async function refreshNotebook() {
+    if (!Number.isInteger(debtorId) || debtorId <= 0) {
+        throw new Error("Invalid customer account.");
+    }
+
+    const thisRequest = ++notebookRequestNumber;
+
     const [profileData, historyData] = await Promise.all([
         apiRequest(`${API_BASE}/${debtorId}`),
         apiRequest(`${API_BASE}/${debtorId}/history`)
     ]);
+
+    if (thisRequest !== notebookRequestNumber) {
+        return;
+    }
 
     if (!profileData.debtor || !historyData.debtor) {
         throw new Error("Customer account information is incomplete.");
@@ -923,8 +1125,14 @@ async function refreshNotebook() {
 
 async function loadDebtorProfile() {
     if (!Number.isInteger(debtorId) || debtorId <= 0) {
-        showMessage("Invalid customer account. Return to Debtor Management.");
-        elements.customerName.textContent = "Invalid customer account";
+        showMessage(
+            "Invalid customer account. Return to Debtor Management."
+        );
+
+        if (elements.customerName) {
+            elements.customerName.textContent = "Invalid customer account";
+        }
+
         return;
     }
 
@@ -935,12 +1143,17 @@ async function loadDebtorProfile() {
     } catch (error) {
         console.error("Load debtor notebook error:", error);
 
-        showMessage(error.message || "Could not load this customer's notebook.");
-        elements.customerName.textContent = "Could not load customer";
+        showMessage(
+            error.message || "Could not load this customer's notebook."
+        );
+
+        if (elements.customerName) {
+            elements.customerName.textContent = "Could not load customer";
+        }
     }
 }
 
-// INITIALIZE PAGE
+// EVENT LISTENERS AND INITIALIZATION
 
 function initializeNotebook() {
     if (elements.logoutButton) {
@@ -948,19 +1161,27 @@ function initializeNotebook() {
     }
 
     if (elements.allTab) {
-        elements.allTab.addEventListener("click", () => setActiveTab("all"));
+        elements.allTab.addEventListener("click", () =>
+            setActiveTab("all")
+        );
     }
 
     if (elements.dailyTab) {
-        elements.dailyTab.addEventListener("click", () => setActiveTab("daily"));
+        elements.dailyTab.addEventListener("click", () =>
+            setActiveTab("daily")
+        );
     }
 
     if (elements.monthlyTab) {
-        elements.monthlyTab.addEventListener("click", () => setActiveTab("monthly"));
+        elements.monthlyTab.addEventListener("click", () =>
+            setActiveTab("monthly")
+        );
     }
 
     if (elements.yearlyTab) {
-        elements.yearlyTab.addEventListener("click", () => setActiveTab("yearly"));
+        elements.yearlyTab.addEventListener("click", () =>
+            setActiveTab("yearly")
+        );
     }
 
     if (elements.dailyNotebookDate) {
@@ -969,13 +1190,15 @@ function initializeNotebook() {
             const today = getNairobiDate();
 
             if (!chosenDate) {
-                elements.dailyNotebookDate.value = selectedDailyDate || today;
+                elements.dailyNotebookDate.value =
+                    selectedDailyDate || today;
                 return;
             }
 
             if (chosenDate > today) {
                 elements.dailyNotebookDate.value = today;
                 selectedDailyDate = today;
+
                 showMessage("Future notebook dates are not available.");
             } else {
                 selectedDailyDate = chosenDate;
@@ -1008,17 +1231,23 @@ function initializeNotebook() {
         });
 
         elements.productsContainer.addEventListener("input", event => {
-            if (event.target.classList.contains("credit-product-quantity")) {
+            if (
+                event.target.classList.contains("credit-product-quantity")
+            ) {
                 updateProductRows();
             }
         });
 
         elements.productsContainer.addEventListener("click", event => {
-            const removeButton = event.target.closest(".remove-product-button");
+            const removeButton = event.target.closest(
+                ".remove-product-button"
+            );
 
             if (!removeButton) return;
 
-            const rows = elements.productsContainer.querySelectorAll(".product-row");
+            const rows = elements.productsContainer.querySelectorAll(
+                ".product-row"
+            );
 
             if (rows.length <= 1) return;
 
@@ -1028,7 +1257,10 @@ function initializeNotebook() {
     }
 
     if (elements.creditForm) {
-        elements.creditForm.addEventListener("submit", saveCreditTransaction);
+        elements.creditForm.addEventListener(
+            "submit",
+            saveCreditTransaction
+        );
     }
 
     if (elements.paymentForm) {
@@ -1037,6 +1269,8 @@ function initializeNotebook() {
 
     initializeDailyDateSelector();
     setPaymentDateLimit();
+
+    setActiveTab("all");
 
     loadAccount();
     loadDebtorProfile();

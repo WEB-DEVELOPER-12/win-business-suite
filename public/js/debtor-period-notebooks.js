@@ -17,18 +17,12 @@
     const currentMonth = Number(today.slice(5, 7));
 
     let activePeriod = "monthly";
-    let periodContainer;
-    let historyData = {
-        transactions: [],
-        payments: []
-    };
+    let periodContainer = null;
+    let requestNumber = 0;
+    let businessCurrency = "KES";
+    let currencyLoaded = false;
 
-    function money(value) {
-        return "KSh " + (Number(value) || 0).toLocaleString("en-KE", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
+    const notebookContent = document.getElementById("notebookContent");
 
     function escapeHTML(value) {
         return String(value ?? "").replace(/[&<>"']/g, character => ({
@@ -40,10 +34,29 @@
         })[character]);
     }
 
+    function money(value) {
+        const amount = Number(value) || 0;
+
+        try {
+            return new Intl.NumberFormat("en-KE", {
+                style: "currency",
+                currency: businessCurrency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        } catch {
+            return `${businessCurrency} ${amount.toLocaleString("en-KE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+        }
+    }
+
     function formatDate(value) {
         if (!value) return "--";
 
         const parts = String(value).split("-");
+
         return parts.length === 3
             ? `${parts[2]}/${parts[1]}/${parts[0]}`
             : escapeHTML(value);
@@ -51,7 +64,11 @@
 
     async function request(url) {
         const response = await fetch(url, {
-            credentials: "same-origin"
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            }
         });
 
         let data;
@@ -64,7 +81,7 @@
 
         if (response.status === 401) {
             window.location.href = "/login.html";
-            throw new Error("Your session has expired.");
+            throw new Error("Your session has expired. Please log in again.");
         }
 
         if (!response.ok || data.success === false) {
@@ -74,12 +91,41 @@
         return data;
     }
 
+    async function loadBusinessCurrency() {
+        if (currencyLoaded) return;
+
+        currencyLoaded = true;
+
+        try {
+            const data = await request("/api/auth/me");
+
+            const user = data.user || {};
+            const business = user.business || data.business || {};
+            const settings = data.settings || business.settings || {};
+
+            const currency =
+                business.currency ||
+                user.business_currency ||
+                user.currency ||
+                data.business_currency ||
+                data.currency ||
+                settings.currency ||
+                "KES";
+
+            const normalized = String(currency).trim().toUpperCase();
+
+            if (/^[A-Z]{3}$/.test(normalized)) {
+                businessCurrency = normalized;
+            }
+        } catch (error) {
+            console.error("Business currency loading error:", error);
+        }
+    }
+
     function createInterface() {
-        const notebookContent = document.getElementById("notebookContent");
+        if (!notebookContent || periodContainer) return;
 
-        if (!notebookContent) return;
-
-        periodContainer = document.createElement("div");
+        periodContainer = document.createElement("section");
         periodContainer.id = "periodNotebookContent";
         periodContainer.style.display = "none";
 
@@ -207,14 +253,23 @@
             </style>
 
             <div class="period-controls">
-                <div>
+                <div id="periodMonthGroup">
                     <label for="periodMonth">Select month</label>
                     <select id="periodMonth">
                         ${Array.from({ length: 12 }, (_, index) => {
                             const month = index + 1;
-                            return `<option value="${month}" ${month === currentMonth ? "selected" : ""}>
-                                ${new Date(2000, index, 1).toLocaleString("en", { month: "long" })}
-                            </option>`;
+
+                            return `
+                                <option
+                                    value="${month}"
+                                    ${month === currentMonth ? "selected" : ""}
+                                >
+                                    ${new Date(2000, index, 1).toLocaleString(
+                                        "en",
+                                        { month: "long" }
+                                    )}
+                                </option>
+                            `;
                         }).join("")}
                     </select>
                 </div>
@@ -226,9 +281,20 @@
             </div>
 
             <div id="periodSummary"></div>
-            <div id="periodStatus" class="period-status"></div>
+
+            <div
+                id="periodStatus"
+                class="period-status"
+                aria-live="polite"
+            ></div>
+
             <div id="periodTable"></div>
-            <div id="periodError" class="period-error" aria-live="polite"></div>
+
+            <div
+                id="periodError"
+                class="period-error"
+                aria-live="polite"
+            ></div>
         `;
 
         notebookContent.parentNode.insertBefore(
@@ -237,58 +303,67 @@
         );
 
         const yearSelect = periodContainer.querySelector("#periodYear");
-
         const years = [];
-        for (let year = currentYear; year >= 2020; year--) {
+
+        for (let year = currentYear; year >= 2000; year--) {
             years.push(year);
         }
 
         yearSelect.innerHTML = years.map(year => `
-            <option value="${year}" ${year === currentYear ? "selected" : ""}>
+            <option
+                value="${year}"
+                ${year === currentYear ? "selected" : ""}
+            >
                 ${year}
             </option>
         `).join("");
 
         periodContainer.querySelector("#periodMonth")
-            .addEventListener("change", loadMonthly);
+            .addEventListener("change", () => {
+                if (activePeriod === "monthly") {
+                    loadMonthly();
+                }
+            });
 
-        yearSelect.addEventListener("change", async () => {
+        yearSelect.addEventListener("change", () => {
             if (activePeriod === "monthly") {
-                await loadMonthly();
-            } else {
-                await loadYearly();
+                loadMonthly();
+            } else if (activePeriod === "yearly") {
+                loadYearly();
             }
         });
     }
 
     function summaryCards(summary) {
+        const values = summary || {};
+
         return `
             <div class="period-summary">
                 <div class="period-summary-card">
                     <p>Opening Balance</p>
-                    <h3>${money(summary.opening_balance)}</h3>
+                    <h3>${escapeHTML(money(values.opening_balance))}</h3>
                 </div>
 
                 <div class="period-summary-card">
                     <p>Goods Taken</p>
-                    <h3>${money(summary.debt_added)}</h3>
+                    <h3>${escapeHTML(money(values.debt_added))}</h3>
                 </div>
 
                 <div class="period-summary-card">
                     <p>Payments Received</p>
-                    <h3>${money(summary.payments_received)}</h3>
+                    <h3>${escapeHTML(money(values.payments_received))}</h3>
                 </div>
 
                 <div class="period-summary-card">
                     <p>Closing Balance</p>
-                    <h3>${money(summary.closing_balance)}</h3>
+                    <h3>${escapeHTML(money(values.closing_balance))}</h3>
                 </div>
             </div>
         `;
     }
 
-    function combinedRecords() {
-        const transactions = (historyData.transactions || []).map(item => ({
+    function combinedRecords(history) {
+        const transactions = (history.transactions || []).map(item => ({
             date: item.transaction_date,
             type: "Goods taken",
             description: (item.items || []).map(product =>
@@ -298,20 +373,28 @@
             kind: "goods"
         }));
 
-        const payments = (historyData.payments || []).map(item => ({
+        const payments = (history.payments || []).map(item => ({
             date: item.payment_date,
             type: "Payment received",
             description: [
                 escapeHTML(item.payment_method || "Payment"),
-                item.reference ? `Reference: ${escapeHTML(item.reference)}` : ""
+                item.reference
+                    ? `Reference: ${escapeHTML(item.reference)}`
+                    : ""
             ].filter(Boolean).join(" · "),
             amount: Number(item.amount) || 0,
             kind: "payment"
         }));
 
-        return [...transactions, ...payments].sort((a, b) =>
-            String(b.date).localeCompare(String(a.date))
-        );
+        return [...transactions, ...payments].sort((a, b) => {
+            const comparison = String(b.date || "").localeCompare(
+                String(a.date || "")
+            );
+
+            if (comparison !== 0) return comparison;
+
+            return a.kind === "goods" ? -1 : 1;
+        });
     }
 
     function renderPeriodRecords(records) {
@@ -334,6 +417,7 @@
                             <th>Amount</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         ${records.map(record => `
                             <tr>
@@ -342,7 +426,7 @@
                                 <td>${record.description}</td>
                                 <td>
                                     <strong>
-                                        ${record.kind === "payment" ? "-" : "+"}${money(record.amount)}
+                                        ${record.kind === "payment" ? "-" : "+"}${escapeHTML(money(record.amount))}
                                     </strong>
                                 </td>
                             </tr>
@@ -354,25 +438,47 @@
     }
 
     async function loadHistory() {
-        const data = await request(`${API_BASE}/${debtorId}/history`);
+        return request(`${API_BASE}/${debtorId}/history`);
+    }
 
-        historyData = {
-            transactions: Array.isArray(data.transactions)
-                ? data.transactions
-                : [],
-            payments: Array.isArray(data.payments)
-                ? data.payments
-                : []
+    function getElements() {
+        return {
+            summary: periodContainer.querySelector("#periodSummary"),
+            status: periodContainer.querySelector("#periodStatus"),
+            table: periodContainer.querySelector("#periodTable"),
+            error: periodContainer.querySelector("#periodError")
         };
     }
 
-    function showError(error) {
-        periodContainer.querySelector("#periodError").textContent =
-            error.message || "Could not load notebook.";
+    function showLoading(message) {
+        const elements = getElements();
+
+        elements.error.textContent = "";
+        elements.summary.innerHTML = escapeHTML(message);
+        elements.status.textContent = "";
+        elements.table.innerHTML = "";
+    }
+
+    function showError(error, requestId) {
+        if (requestId !== requestNumber) return;
+
+        const elements = getElements();
+
+        elements.summary.innerHTML = "";
+        elements.status.textContent = "";
+        elements.table.innerHTML = "";
+        elements.error.textContent =
+            error.message || "Could not load notebook data.";
+
+        console.error("Period notebook error:", error);
     }
 
     async function loadMonthly() {
-        if (!periodContainer || !debtorId) return;
+        if (!periodContainer || !Number.isInteger(debtorId) || debtorId <= 0) {
+            return;
+        }
+
+        activePeriod = "monthly";
 
         const month = Number(
             periodContainer.querySelector("#periodMonth").value
@@ -382,76 +488,101 @@
             periodContainer.querySelector("#periodYear").value
         );
 
-        const summaryElement = periodContainer.querySelector("#periodSummary");
-        const statusElement = periodContainer.querySelector("#periodStatus");
-        const tableElement = periodContainer.querySelector("#periodTable");
-        const errorElement = periodContainer.querySelector("#periodError");
+        if (
+            !Number.isInteger(month) ||
+            month < 1 ||
+            month > 12 ||
+            !Number.isInteger(year) ||
+            year < 2000 ||
+            year > currentYear
+        ) {
+            return;
+        }
 
-        errorElement.textContent = "";
-        summaryElement.innerHTML = "Loading monthly notebook...";
-        tableElement.innerHTML = "";
+        const requestId = ++requestNumber;
+        showLoading("Loading monthly notebook...");
 
         try {
-            const [monthlyData] = await Promise.all([
+            await loadBusinessCurrency();
+
+            const [monthlyData, historyData] = await Promise.all([
                 request(
                     `${API_BASE}/${debtorId}/notebooks/monthly?year=${year}&month=${month}`
                 ),
                 loadHistory()
             ]);
 
+            if (requestId !== requestNumber) return;
+
+            if (!monthlyData.notebook) {
+                throw new Error("Monthly notebook information was not returned.");
+            }
+
             const notebook = monthlyData.notebook;
+            const elements = getElements();
 
-            summaryElement.innerHTML = summaryCards(notebook);
+            elements.summary.innerHTML = summaryCards(notebook);
 
-            statusElement.textContent =
-                `Notebook status: ${notebook.status.toUpperCase()}`;
+            elements.status.textContent =
+                `Notebook status: ${String(notebook.status || "open").toUpperCase()}`;
 
-            const monthRecords = combinedRecords().filter(record =>
-                String(record.date || "").startsWith(
-                    `${year}-${String(month).padStart(2, "0")}`
-                )
+            const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+
+            const monthRecords = combinedRecords(historyData).filter(record =>
+                String(record.date || "").startsWith(monthKey)
             );
 
-            tableElement.innerHTML = `
+            elements.table.innerHTML = `
                 <h3 class="period-section-title">Monthly Records</h3>
                 ${renderPeriodRecords(monthRecords)}
             `;
         } catch (error) {
-            summaryElement.innerHTML = "";
-            statusElement.textContent = "";
-            tableElement.innerHTML = "";
-            showError(error);
+            showError(error, requestId);
         }
     }
 
     async function loadYearly() {
-        if (!periodContainer || !debtorId) return;
+        if (!periodContainer || !Number.isInteger(debtorId) || debtorId <= 0) {
+            return;
+        }
+
+        activePeriod = "yearly";
 
         const year = Number(
             periodContainer.querySelector("#periodYear").value
         );
 
-        const summaryElement = periodContainer.querySelector("#periodSummary");
-        const statusElement = periodContainer.querySelector("#periodStatus");
-        const tableElement = periodContainer.querySelector("#periodTable");
-        const errorElement = periodContainer.querySelector("#periodError");
+        if (
+            !Number.isInteger(year) ||
+            year < 2000 ||
+            year > currentYear
+        ) {
+            return;
+        }
 
-        errorElement.textContent = "";
-        summaryElement.innerHTML = "Loading yearly history...";
-        tableElement.innerHTML = "";
+        const requestId = ++requestNumber;
+        showLoading("Loading yearly history...");
 
         try {
-            const [yearlyData] = await Promise.all([
+            await loadBusinessCurrency();
+
+            const [yearlyData, historyData] = await Promise.all([
                 request(
                     `${API_BASE}/${debtorId}/notebooks/yearly?year=${year}`
                 ),
                 loadHistory()
             ]);
 
-            summaryElement.innerHTML = summaryCards(yearlyData.summary);
+            if (requestId !== requestNumber) return;
 
-            statusElement.textContent =
-                `Yearly account summary for ${year}`;
+            if (!yearlyData.summary) {
+                throw new Error("Yearly summary information was not returned.");
+            }
+
+            const elements = getElements();
+
+            elements.summary.innerHTML = summaryCards(yearlyData.summary);
+            elements.status.textContent = `Yearly account summary for ${year}`;
 
             const monthNames = [
                 "January", "February", "March", "April",
@@ -459,21 +590,36 @@
                 "September", "October", "November", "December"
             ];
 
-            const monthRows = yearlyData.months || [];
+            const months = Array.isArray(yearlyData.months)
+                ? yearlyData.months
+                : [];
 
-            const rows = monthRows.map(month => `
-                <tr>
-                    <td>${monthNames[Number(month.month) - 1]}</td>
-                    <td>${money(month.opening_balance)}</td>
-                    <td>${money(month.debt_added)}</td>
-                    <td>${money(month.payments_received)}</td>
-                    <td>${money(month.closing_balance)}</td>
-                    <td>${escapeHTML(month.status)}</td>
-                </tr>
-            `).join("");
+            const rows = months.map(month => {
+                const monthNumber = Number(month.month);
+                const monthName = monthNames[monthNumber - 1] || "Unknown";
 
-            tableElement.innerHTML = `
-                <h3 class="period-section-title">Monthly Breakdown — ${year}</h3>
+                return `
+                    <tr>
+                        <td>${monthName}</td>
+                        <td>${escapeHTML(money(month.opening_balance))}</td>
+                        <td>${escapeHTML(money(month.debt_added))}</td>
+                        <td>${escapeHTML(money(month.payments_received))}</td>
+                        <td><strong>${escapeHTML(money(month.closing_balance))}</strong></td>
+                        <td>${escapeHTML(month.status || "open")}</td>
+                    </tr>
+                `;
+            }).join("");
+
+            const yearKey = String(year);
+
+            const yearRecords = combinedRecords(historyData).filter(record =>
+                String(record.date || "").startsWith(yearKey)
+            );
+
+            elements.table.innerHTML = `
+                <h3 class="period-section-title">
+                    Monthly Breakdown — ${year}
+                </h3>
 
                 <div class="period-table-wrap">
                     <table>
@@ -487,6 +633,7 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             ${rows || `
                                 <tr>
@@ -498,43 +645,73 @@
                         </tbody>
                     </table>
                 </div>
+
+                <h3 class="period-section-title">
+                    All Records — ${year}
+                </h3>
+
+                ${renderPeriodRecords(yearRecords)}
             `;
         } catch (error) {
-            summaryElement.innerHTML = "";
-            statusElement.textContent = "";
-            tableElement.innerHTML = "";
-            showError(error);
+            showError(error, requestId);
+        }
+    }
+
+    function updateRegularNotebookVisibility(show) {
+        if (notebookContent) {
+            notebookContent.style.display = show ? "" : "none";
+        }
+
+        const dailySummary = document.getElementById("dailyNotebookSummary");
+
+        if (dailySummary) {
+            const dailyTab = document.getElementById("dailyRecordsTab");
+            const shouldShowDailySummary =
+                show &&
+                dailyTab &&
+                dailyTab.classList.contains("active");
+
+            dailySummary.style.display = shouldShowDailySummary ? "grid" : "none";
         }
     }
 
     function activatePeriodView(period) {
+        if (!periodContainer) return;
+
         activePeriod = period;
 
-        const regularContent = document.getElementById("notebookContent");
+        const isPeriodView =
+            period === "monthly" || period === "yearly";
 
-        if (period === "monthly" || period === "yearly") {
-            regularContent.style.display = "none";
-            periodContainer.style.display = "block";
+        updateRegularNotebookVisibility(!isPeriodView);
 
-            const monthControl =
-                periodContainer.querySelector("#periodMonth");
+        periodContainer.style.display = isPeriodView ? "block" : "none";
 
-            monthControl.parentElement.style.display =
-                period === "monthly" ? "block" : "none";
+        if (!isPeriodView) {
+            requestNumber++;
+            return;
+        }
 
-            if (period === "monthly") {
-                loadMonthly();
-            } else {
-                loadYearly();
-            }
+        const monthGroup =
+            periodContainer.querySelector("#periodMonthGroup");
+
+        monthGroup.style.display =
+            period === "monthly" ? "block" : "none";
+
+        if (period === "monthly") {
+            loadMonthly();
         } else {
-            regularContent.style.display = "block";
-            periodContainer.style.display = "none";
+            loadYearly();
         }
     }
 
     function initialize() {
         if (!Number.isInteger(debtorId) || debtorId <= 0) return;
+
+        if (!notebookContent || !notebookContent.parentNode) {
+            console.error("Notebook content element was not found.");
+            return;
+        }
 
         createInterface();
 
@@ -562,6 +739,8 @@
                 });
             }
         });
+
+        loadBusinessCurrency();
     }
 
     if (document.readyState === "loading") {

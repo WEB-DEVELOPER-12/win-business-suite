@@ -22,6 +22,7 @@ router.get("/", (req, res) => {
             current_period_end,
             CASE
                 WHEN status = 'trial'
+                     AND trial_ends_at IS NOT NULL
                      AND datetime(trial_ends_at) <= datetime('now')
                 THEN 'expired'
                 WHEN status = 'active'
@@ -32,6 +33,7 @@ router.get("/", (req, res) => {
             END AS current_status,
             CASE
                 WHEN status = 'trial'
+                     AND trial_ends_at IS NOT NULL
                 THEN MAX(
                     0,
                     CAST(
@@ -70,7 +72,7 @@ router.get("/", (req, res) => {
                 });
             }
 
-            res.json({
+            return res.json({
                 success: true,
                 subscription: {
                     business_id: subscription.business_id,
@@ -87,15 +89,155 @@ router.get("/", (req, res) => {
     );
 });
 
-// CREATE WIN PRO UPGRADE REQUEST
+// START THE 7-DAY FREE TRIAL
+router.post("/start-trial", (req, res) => {
+    const businessId = req.session.user.business_id;
+
+    db.run(
+        `UPDATE subscriptions
+         SET
+            status = 'trial',
+            trial_started_at = CURRENT_TIMESTAMP,
+            trial_ends_at = datetime('now', '+7 days')
+         WHERE business_id = ?
+           AND status = 'pending'
+           AND trial_started_at IS NULL
+           AND trial_ends_at IS NULL`,
+        [businessId],
+        function (error) {
+            if (error) {
+                console.error("Trial activation error:", error.message);
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Could not start your free trial."
+                });
+            }
+
+            if (this.changes === 0) {
+                return db.get(
+                    `SELECT status, trial_started_at, trial_ends_at
+                     FROM subscriptions
+                     WHERE business_id = ?`,
+                    [businessId],
+                    (lookupError, subscription) => {
+                        if (lookupError) {
+                            console.error(
+                                "Trial status lookup error:",
+                                lookupError.message
+                            );
+
+                            return res.status(500).json({
+                                success: false,
+                                message: "Could not verify your trial status."
+                            });
+                        }
+
+                        if (!subscription) {
+                            return res.status(404).json({
+                                success: false,
+                                message: "No subscription record was found."
+                            });
+                        }
+
+                        return res.status(409).json({
+                            success: false,
+                            message: "Your trial cannot be started again.",
+                            subscription
+                        });
+                    }
+                );
+            }
+
+            return res.json({
+                success: true,
+                message: "Your 7-day WIN Pro free trial has started.",
+                trial_duration_days: 7
+            });
+        }
+    );
+});
+
+// LOAD COMPLETE UPGRADE REQUEST DETAILS
+function returnUpgradeRequest(res, requestId, alreadyExists) {
+    db.get(
+        `SELECT
+            sp.id AS request_id,
+            sp.business_id,
+            sp.user_id,
+            sp.plan_name,
+            sp.billing_cycle,
+            sp.amount,
+            sp.currency,
+            sp.status AS payment_status,
+            sp.submitted_at,
+
+            u.full_name AS customer_name,
+            u.email AS customer_email,
+
+            b.business_name,
+            b.business_type,
+            b.email AS business_email,
+            b.phone AS business_phone,
+            b.country AS business_country
+
+         FROM subscription_payments sp
+
+         INNER JOIN users u
+            ON sp.user_id = u.id
+
+         INNER JOIN businesses b
+            ON sp.business_id = b.id
+
+         WHERE sp.id = ?
+           AND sp.business_id = ?`,
+        [requestId, reqBusinessId(res)],
+        (error, request) => {
+            if (error) {
+                console.error(
+                    "Upgrade request details error:",
+                    error.message
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    message: "The request was saved, but its details could not be loaded."
+                });
+            }
+
+            if (!request) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Upgrade request details could not be found."
+                });
+            }
+
+            return res.status(alreadyExists ? 200 : 201).json({
+                success: true,
+                already_exists: alreadyExists,
+                message: alreadyExists
+                    ? "Your existing upgrade request is ready to continue on WhatsApp."
+                    : "Your upgrade request has been saved. Continue on WhatsApp.",
+                request
+            });
+        }
+    );
+}
+
+// Keep the authenticated business ID available to the response helper.
+function reqBusinessId(res) {
+    return res.locals.businessId;
+}
+
+// CREATE OR REUSE WIN PRO UPGRADE REQUEST
 router.post("/request", (req, res) => {
     const businessId = req.session.user.business_id;
     const userId = req.session.user.id;
     const billingCycle = req.body.billing_cycle;
 
     const plans = {
-        monthly: 2000,
-        annual: 20000
+        monthly: 1000,
+        annual: 10000
     };
 
     if (!plans[billingCycle]) {
@@ -107,7 +249,9 @@ router.post("/request", (req, res) => {
 
     const amount = plans[billingCycle];
 
-    // Avoid duplicate pending requests for the same business and plan.
+    res.locals.businessId = businessId;
+
+    // Reuse an existing pending request for the same plan.
     db.get(
         `SELECT id
          FROM subscription_payments
@@ -130,10 +274,12 @@ router.post("/request", (req, res) => {
             }
 
             if (existingRequest) {
-                return res.status(409).json({
-                    success: false,
-                    message: "You already have a pending request for this plan."
-                });
+                returnUpgradeRequest(
+                    res,
+                    existingRequest.id,
+                    true
+                );
+                return;
             }
 
             db.run(
@@ -160,22 +306,63 @@ router.post("/request", (req, res) => {
                         });
                     }
 
-                    return res.status(201).json({
-                        success: true,
-                        message: "Your WIN Pro upgrade request has been recorded.",
-                        request: {
-                            id: this.lastID,
-                            business_id: businessId,
-                            user_id: userId,
-                            plan_name: "WIN Pro",
-                            billing_cycle: billingCycle,
-                            amount,
-                            currency: "KES",
-                            status: "pending"
-                        }
-                    });
+                    returnUpgradeRequest(
+                        res,
+                        this.lastID,
+                        false
+                    );
                 }
             );
+        }
+    );
+});
+
+// SAVE A SUPPORT MESSAGE
+router.post("/support", (req, res) => {
+    const businessId = req.session.user.business_id;
+    const userId = req.session.user.id;
+
+    const subject = String(req.body.subject || "").trim();
+    const message = String(req.body.message || "").trim();
+
+    if (!subject || !message) {
+        return res.status(400).json({
+            success: false,
+            message: "Please provide both a subject and a message."
+        });
+    }
+
+    if (subject.length > 150 || message.length > 5000) {
+        return res.status(400).json({
+            success: false,
+            message: "Your subject or message is too long."
+        });
+    }
+
+    db.run(
+        `INSERT INTO support_messages (
+            business_id,
+            user_id,
+            subject,
+            message,
+            status
+        ) VALUES (?, ?, ?, ?, 'open')`,
+        [businessId, userId, subject, message],
+        function (error) {
+            if (error) {
+                console.error("Support message error:", error.message);
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Could not send your support message."
+                });
+            }
+
+            return res.status(201).json({
+                success: true,
+                message: "Your support message has been received.",
+                message_id: this.lastID
+            });
         }
     );
 });

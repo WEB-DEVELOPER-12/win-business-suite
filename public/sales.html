@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sale | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --navy: #071b35;
+            --navy-light: #102d50;
+            --cyan: #12bde0;
+            --background: #f3f7fb;
+            --text: #172b45;
+            --muted: #718096;
+            --white: #ffffff;
+            --border: #e5edf5;
+            --green: #159b69;
+            --shadow: 0 8px 28px rgba(7, 27, 53, 0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Inter, Arial, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--navy);
+            color: white;
+            padding: 17px 6%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand span {
+            color: var(--cyan);
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 10px 15px;
+            border-radius: 9px;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .container {
+            width: min(1120px, 90%);
+            margin: 35px auto 60px;
+        }
+
+        .page-heading {
+            margin-bottom: 27px;
+        }
+
+        .page-heading h1 {
+            font-size: clamp(26px, 4vw, 34px);
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+
+        .page-heading p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .overview-title {
+            font-size: 17px;
+            font-weight: 750;
+            color: var(--navy);
+            margin-bottom: 15px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 17px;
+            margin-bottom: 38px;
+        }
+
+        .summary-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 23px;
+            box-shadow: var(--shadow);
+            min-height: 135px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 650;
+            margin-bottom: 13px;
+        }
+
+        .summary-value {
+            font-size: clamp(23px, 3vw, 30px);
+            font-weight: 800;
+            color: var(--navy);
+            overflow-wrap: anywhere;
+        }
+
+        .profit-value {
+            color: var(--green);
+        }
+
+        .summary-note {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 9px;
+        }
+
+        .section-heading {
+            margin-bottom: 17px;
+        }
+
+        .section-heading h2 {
+            font-size: 20px;
+            color: var(--navy);
+            margin-bottom: 6px;
+        }
+
+        .section-heading p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .action-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            padding: 25px 22px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: block;
+            min-height: 190px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 13px 32px rgba(7, 27, 53, 0.12);
+        }
+
+        .action-icon {
+            width: 49px;
+            height: 49px;
+            border-radius: 13px;
+            display: grid;
+            place-items: center;
+            background: #e8faff;
+            color: #079cbe;
+            font-size: 23px;
+            margin-bottom: 19px;
+        }
+
+        .action-card h3 {
+            color: var(--navy);
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+
+        .action-card p {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .action-arrow {
+            display: block;
+            color: #079cbe;
+            font-size: 13px;
+            font-weight: 750;
+            margin-top: 17px;
+        }
+
+        .status-message {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 13px;
+            min-height: 17px;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 25px 10px;
+        }
+
+        @media (max-width: 760px) {
+            .summary-grid,
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card {
+                min-height: 115px;
+            }
+
+            .action-card {
+                min-height: 165px;
+            }
+
+            .container {
+                margin-top: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="brand">WIN <span>Business Suite</span></div>
+        <a class="back-link" href="dashboard.html">← Dashboard</a>
+    </header>
+
+    <main class="container">
+
+        <section class="page-heading">
+            <h1>Sale Centre</h1>
+            <p>Manage your sales, review transactions and view your sales performance.</p>
+        </section>
+
+        <section>
+            <h2 class="overview-title">Today's Overview</h2>
+
+            <div class="summary-grid">
+
+                <article class="summary-card">
+                    <div class="summary-label">Today's Sales</div>
+                    <div class="summary-value" id="todaySales">KSh 0.00</div>
+                    <div class="summary-note">Total completed sales today</div>
+                </article>
+
+                <article class="summary-card">
+                    <div class="summary-label">Today's Gross Profit</div>
+                    <div class="summary-value profit-value" id="todayProfit">
+                        KSh 0.00
+                    </div>
+                    <div class="summary-note">Sales minus the cost of sold products</div>
+                </article>
+
+                <article class="summary-card">
+                    <div class="summary-label">Transactions</div>
+                    <div class="summary-value" id="todayTransactions">0</div>
+                    <div class="summary-note">Completed transactions today</div>
+                </article>
+
+            </div>
+
+            <div class="status-message" id="summaryStatus">
+                Loading today's sales information...
+            </div>
+        </section>
+
+        <section>
+            <div class="section-heading">
+                <h2>Manage Sales</h2>
+                <p>Choose what you want to do.</p>
+            </div>
+
+            <div class="actions-grid">
+
+                <a href="sell.html" class="action-card">
+                    <div class="action-icon">＋</div>
+                    <h3>Sell</h3>
+                    <p>Record a new sale, add products and receive customer payments.</p>
+                    <span class="action-arrow">Open Sell →</span>
+                </a>
+
+                <a href="sales-history.html" class="action-card">
+                    <div class="action-icon">▤</div>
+                    <h3>Sales History</h3>
+                    <p>View previous sales, search transactions and review payment records.</p>
+                    <span class="action-arrow">View History →</span>
+                </a>
+
+                <a href="sale-details.html" class="action-card">
+                    <div class="action-icon">▣</div>
+                    <h3>Sale Details</h3>
+                    <p>Open the details of a selected sale and view its items and payments.</p>
+                    <span class="action-arrow">View Sale Details →</span>
+                </a>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        WIN Business Suite · Manage Everything. Grow Smarter.
+    </footer>
+
+    <script>
+        function formatMoney(value) {
+            const amount = Number(value || 0);
+
+            return "KSh " + amount.toLocaleString("en-KE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        async function loadTodaySummary() {
+            const status = document.getElementById("summaryStatus");
+
+            try {
+                const response = await fetch("/api/sales/summary", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(
+                        result.message || "Unable to load sales summary."
+                    );
+                }
+
+                const summary = result.summary || {};
+
+                document.getElementById("todaySales").textContent =
+                    formatMoney(summary.total_revenue);
+
+                document.getElementById("todayProfit").textContent =
+                    formatMoney(summary.gross_profit);
+
+                document.getElementById("todayTransactions").textContent =
+                    Number(summary.total_sales || 0).toLocaleString("en-KE");
+
+                status.textContent = "Today's sales information is up to date.";
+
+            } catch (error) {
+                console.error("Sale Centre summary error:", error);
+
+                status.textContent =
+                    "Could not load today's summary. Please refresh the page.";
+            }
+        }
+
+        loadTodaySummary();
+    </script>
+
+</body>
+</html>

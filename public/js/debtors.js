@@ -1,37 +1,40 @@
 
+"use strict";
+
 document.addEventListener("DOMContentLoaded", () => {
     const API_BASE = "/api";
 
-    // Account and existing debtor elements
+    // ACCOUNT
     const userName = document.getElementById("userName");
     const logoutButton = document.getElementById("logoutButton");
 
+    // DEBTOR FORM
     const debtorForm = document.getElementById("debtorForm");
     const saveDebtorButton = document.getElementById("saveDebtorButton");
     const debtorFormMessage = document.getElementById("debtorFormMessage");
 
+    // DEBTOR LIST
     const debtorsTableBody = document.getElementById("debtorsTableBody");
     const debtorListMessage = document.getElementById("debtorListMessage");
-
     const debtorSearch = document.getElementById("debtorSearch");
     const statusFilter = document.getElementById("statusFilter");
 
+    // DASHBOARD TOTALS
     const totalDebtors = document.getElementById("totalDebtors");
     const totalOutstanding = document.getElementById("totalOutstanding");
     const totalPayments = document.getElementById("totalPayments");
     const totalCustomerCredit = document.getElementById("totalCustomerCredit");
 
-    // Report elements
+    // REPORT FILTERS
     const reportPeriod = document.getElementById("reportPeriod");
     const reportDateGroup = document.getElementById("reportDateGroup");
     const reportDate = document.getElementById("reportDate");
-
     const reportMonthGroup = document.getElementById("reportMonthGroup");
     const reportMonth = document.getElementById("reportMonth");
-
     const reportYearGroup = document.getElementById("reportYearGroup");
     const reportYear = document.getElementById("reportYear");
 
+    // REPORT RESULTS
     const loadDebtorReportButton = document.getElementById("loadDebtorReportButton");
     const debtorReportMessage = document.getElementById("debtorReportMessage");
     const debtorReportResults = document.getElementById("debtorReportResults");
@@ -58,17 +61,66 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const reportTopDebtorsBody = document.getElementById("reportTopDebtorsBody");
 
+    // STATE
     let debtors = [];
+    let currencyCode = "KES";
+
+    let reportRequestNumber = 0;
+    let debtorRequestNumber = 0;
+
+    let isRegistering = false;
+
+    const originalRegisterButtonText =
+        saveDebtorButton?.textContent || "Register Debtor";
+
+    const originalReportButtonText =
+        loadDebtorReportButton?.textContent || "Generate Report";
+
+    // GENERAL HELPERS
+    function roundMoney(value) {
+        const number = Number(value);
+
+        if (!Number.isFinite(number)) {
+            return 0;
+        }
+
+        return Math.round((number + Number.EPSILON) * 100) / 100;
+    }
 
     function formatMoney(amount) {
-        const value = Number(amount) || 0;
+        const value = roundMoney(amount);
 
-        return new Intl.NumberFormat("en-KE", {
-            style: "currency",
-            currency: "KES",
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(value);
+        try {
+            return new Intl.NumberFormat("en", {
+                style: "currency",
+                currency: currencyCode,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        } catch {
+            return `${currencyCode} ${value.toFixed(2)}`;
+        }
+    }
+
+    function setCurrencyFromAccount(result) {
+        const candidates = [
+            result?.business?.currency,
+            result?.user?.business?.currency,
+            result?.user?.business_currency,
+            result?.user?.currency,
+            result?.data?.business?.currency,
+            result?.business_currency,
+            result?.currency
+        ];
+
+        const selected = candidates.find(value =>
+            typeof value === "string" &&
+            /^[A-Za-z]{3}$/.test(value.trim())
+        );
+
+        if (selected) {
+            currencyCode = selected.trim().toUpperCase();
+        }
     }
 
     function escapeHTML(value) {
@@ -98,12 +150,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function isValidDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) {
+            return false;
+        }
+
+        const [year, month, day] = value.split("-").map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+
+        return (
+            date.getUTCFullYear() === year &&
+            date.getUTCMonth() === month - 1 &&
+            date.getUTCDate() === day
+        );
+    }
+
     async function apiRequest(endpoint, options = {}) {
         const response = await fetch(`${API_BASE}${endpoint}`, {
             credentials: "same-origin",
             ...options,
             headers: {
-                ...(options.body ? { "Content-Type": "application/json" } : {}),
+                ...(options.body ? {
+                    "Content-Type": "application/json"
+                } : {}),
+                Accept: "application/json",
                 ...(options.headers || {})
             }
         });
@@ -122,7 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!response.ok || result.success === false) {
-            throw new Error(result.message || "Something went wrong.");
+            throw new Error(
+                result.message || "Something went wrong. Please try again."
+            );
         }
 
         return result;
@@ -133,9 +205,17 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const result = await apiRequest("/auth/me");
 
-            if (result.user && userName) {
-                userName.textContent = result.user.full_name || "Account";
+            if (userName) {
+                userName.textContent =
+                    result.user?.full_name ||
+                    result.user?.name ||
+                    "Account";
             }
+
+            setCurrencyFromAccount(result);
+
+            updateDashboardTotals();
+            renderDebtors();
         } catch (error) {
             console.error("Account loading error:", error);
             showMessage(debtorListMessage, error.message, "error");
@@ -158,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // DEBTOR ACCOUNTS
+    // DEBTOR STATUS AND CREDIT
     function getCreditLimit(debtor) {
         return Math.max(0, Number(debtor.credit_limit) || 0);
     }
@@ -172,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const balance = Math.max(0, Number(debtor.balance) || 0);
 
-        return Math.max(0, limit - balance);
+        return Math.max(0, roundMoney(limit - balance));
     }
 
     function getStatusLabel(status) {
@@ -198,6 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return classes[status] || "";
     }
 
+    // DASHBOARD TOTALS
     function updateDashboardTotals() {
         const totals = debtors.reduce((result, debtor) => {
             result.paid += Number(debtor.total_paid) || 0;
@@ -211,22 +292,42 @@ document.addEventListener("DOMContentLoaded", () => {
             credit: 0
         });
 
-        totalDebtors.textContent = debtors.length;
-        totalOutstanding.textContent = formatMoney(totals.balance);
-        totalPayments.textContent = formatMoney(totals.paid);
-        totalCustomerCredit.textContent = formatMoney(totals.credit);
+        if (totalDebtors) {
+            totalDebtors.textContent = String(debtors.length);
+        }
+
+        if (totalOutstanding) {
+            totalOutstanding.textContent = formatMoney(totals.balance);
+        }
+
+        if (totalPayments) {
+            totalPayments.textContent = formatMoney(totals.paid);
+        }
+
+        if (totalCustomerCredit) {
+            totalCustomerCredit.textContent = formatMoney(totals.credit);
+        }
     }
 
+    // DEBTOR TABLE
     function renderDebtors() {
-        const searchTerm = debtorSearch.value.trim().toLowerCase();
-        const selectedStatus = statusFilter.value;
+        if (!debtorsTableBody) return;
+
+        const searchTerm = debtorSearch
+            ? debtorSearch.value.trim().toLowerCase()
+            : "";
+
+        const selectedStatus = statusFilter
+            ? statusFilter.value
+            : "";
 
         const filteredDebtors = debtors.filter(debtor => {
             const name = String(debtor.full_name || "").toLowerCase();
             const phone = String(debtor.phone || "").toLowerCase();
 
             const matchesSearch =
-                name.includes(searchTerm) || phone.includes(searchTerm);
+                name.includes(searchTerm) ||
+                phone.includes(searchTerm);
 
             const matchesStatus =
                 !selectedStatus || debtor.status === selectedStatus;
@@ -257,7 +358,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         <br>
                         <small style="color:#718096;">
                             Credit limit:
-                            ${limit === 0 ? "No fixed limit" : escapeHTML(formatMoney(limit))}
+                            ${limit === 0
+                                ? "No fixed limit"
+                                : escapeHTML(formatMoney(limit))}
                         </small>
                         ${
                             available === null
@@ -267,11 +370,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     </td>
 
                     <td>${escapeHTML(debtor.phone || "Not provided")}</td>
-                    <td>${formatMoney(debtor.total_debt)}</td>
-                    <td>${formatMoney(debtor.total_paid)}</td>
+                    <td>${escapeHTML(formatMoney(debtor.total_debt))}</td>
+                    <td>${escapeHTML(formatMoney(debtor.total_paid))}</td>
 
                     <td>
-                        <strong>${formatMoney(debtor.balance)}</strong>
+                        <strong>${escapeHTML(formatMoney(debtor.balance))}</strong>
                     </td>
 
                     <td>
@@ -296,18 +399,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadDebtors() {
-        debtorsTableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="table-empty">
-                    Loading debtor accounts...
-                </td>
-            </tr>
-        `;
+        const thisRequest = ++debtorRequestNumber;
+
+        if (debtorsTableBody) {
+            debtorsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="table-empty">
+                        Loading debtor accounts...
+                    </td>
+                </tr>
+            `;
+        }
 
         showMessage(debtorListMessage, "");
 
         try {
             const result = await apiRequest("/debtors");
+
+            if (thisRequest !== debtorRequestNumber) {
+                return;
+            }
 
             debtors = Array.isArray(result.debtors)
                 ? result.debtors
@@ -315,35 +426,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
             updateDashboardTotals();
             renderDebtors();
-
         } catch (error) {
+            if (thisRequest !== debtorRequestNumber) {
+                return;
+            }
+
             console.error("Debtor loading error:", error);
 
-            debtorsTableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="table-empty">
-                        Unable to load debtor accounts.
-                    </td>
-                </tr>
-            `;
+            if (debtorsTableBody) {
+                debtorsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="table-empty">
+                            Unable to load debtor accounts.
+                        </td>
+                    </tr>
+                `;
+            }
 
             showMessage(debtorListMessage, error.message, "error");
         }
     }
 
+    // REGISTER DEBTOR
     async function registerDebtor(event) {
         event.preventDefault();
+
+        if (!debtorForm || !saveDebtorButton || isRegistering) {
+            return;
+        }
 
         showMessage(debtorFormMessage, "");
 
         const formData = new FormData(debtorForm);
+
+        const rawCreditLimit = String(
+            formData.get("credit_limit") ?? "0"
+        ).trim();
 
         const debtorData = {
             full_name: String(formData.get("full_name") || "").trim(),
             phone: String(formData.get("phone") || "").trim(),
             email: String(formData.get("email") || "").trim(),
             address: String(formData.get("address") || "").trim(),
-            credit_limit: Number(formData.get("credit_limit")),
+            credit_limit: rawCreditLimit === "" ? 0 : Number(rawCreditLimit),
             notes: String(formData.get("notes") || "").trim()
         };
 
@@ -368,6 +493,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        debtorData.credit_limit = roundMoney(debtorData.credit_limit);
+
+        isRegistering = true;
         saveDebtorButton.disabled = true;
         saveDebtorButton.textContent = "Registering...";
 
@@ -392,7 +520,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             await loadDebtors();
-
         } catch (error) {
             console.error("Debtor registration error:", error);
 
@@ -401,15 +528,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.message,
                 "error"
             );
-
         } finally {
+            isRegistering = false;
             saveDebtorButton.disabled = false;
-            saveDebtorButton.textContent = "Register Debtor";
+            saveDebtorButton.textContent = originalRegisterButtonText;
         }
     }
 
     function viewDebtor(debtorId) {
-        const debtor = debtors.find(item => Number(item.id) === debtorId);
+        const debtor = debtors.find(
+            item => Number(item.id) === debtorId
+        );
 
         if (!debtor) {
             alert("Debtor account could not be found.");
@@ -420,36 +549,49 @@ document.addEventListener("DOMContentLoaded", () => {
             `/debtor-profile.html?id=${encodeURIComponent(debtorId)}`;
     }
 
-    // REPORTS
-    function getLocalDateParts() {
-        const now = new Date();
+    // NAIROBI DATE HELPERS
+    function getNairobiDateParts() {
+        const parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Africa/Nairobi",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).formatToParts(new Date());
+
+        const values = {};
+
+        for (const part of parts) {
+            if (part.type !== "literal") {
+                values[part.type] = part.value;
+            }
+        }
 
         return {
-            year: String(now.getFullYear()),
-            month: String(now.getMonth() + 1).padStart(2, "0"),
-            date: [
-                now.getFullYear(),
-                String(now.getMonth() + 1).padStart(2, "0"),
-                String(now.getDate()).padStart(2, "0")
-            ].join("-")
+            year: values.year,
+            month: values.month,
+            date: `${values.year}-${values.month}-${values.day}`
         };
     }
 
+    // REPORT FILTERS
     function initialiseReportFilters() {
         if (!reportPeriod) return;
 
-        const current = getLocalDateParts();
+        const current = getNairobiDateParts();
 
         if (reportDate) {
             reportDate.value = current.date;
+            reportDate.max = current.date;
         }
 
         if (reportMonth) {
             reportMonth.value = `${current.year}-${current.month}`;
+            reportMonth.max = `${current.year}-${current.month}`;
         }
 
         if (reportYear) {
             reportYear.value = current.year;
+            reportYear.max = current.year;
         }
 
         updateReportFilterVisibility();
@@ -474,40 +616,60 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function buildReportEndpoint() {
+        if (!reportPeriod) {
+            throw new Error("Report period selector is unavailable.");
+        }
+
         const period = reportPeriod.value;
         const params = new URLSearchParams();
+        const current = getNairobiDateParts();
 
         params.set("period", period);
 
         if (period === "daily") {
-            const date = reportDate.value;
+            const date = reportDate?.value || "";
 
-            if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            if (!isValidDate(date)) {
                 throw new Error("Please select a valid report date.");
             }
 
-            params.set("date", date);
+            if (date > current.date) {
+                throw new Error("A report date cannot be in the future.");
+            }
 
+            params.set("date", date);
         } else if (period === "monthly") {
-            const monthValue = reportMonth.value;
-            const match = /^(\d{4})-(\d{2})$/.exec(monthValue || "");
+            const monthValue = reportMonth?.value || "";
+            const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
 
             if (!match) {
                 throw new Error("Please select a valid report month.");
             }
 
-            params.set("year", match[1]);
-            params.set("month", String(Number(match[2])));
+            const monthNumber = Number(match[2]);
 
+            if (monthNumber < 1 || monthNumber > 12) {
+                throw new Error("Please select a valid report month.");
+            }
+
+            if (monthValue > `${current.year}-${current.month}`) {
+                throw new Error("A report month cannot be in the future.");
+            }
+
+            params.set("year", match[1]);
+            params.set("month", String(monthNumber));
         } else if (period === "yearly") {
-            const yearValue = String(reportYear.value || "");
+            const yearValue = String(reportYear?.value || "");
 
             if (!/^\d{4}$/.test(yearValue) || Number(yearValue) < 2000) {
                 throw new Error("Please enter a valid report year.");
             }
 
-            params.set("year", yearValue);
+            if (yearValue > current.year) {
+                throw new Error("A report year cannot be in the future.");
+            }
 
+            params.set("year", yearValue);
         } else {
             throw new Error("Please select a valid report period.");
         }
@@ -523,6 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : String(Number(value) || 0);
     }
 
+    // TOP DEBTORS TABLE
     function renderTopDebtors(topDebtors) {
         if (!reportTopDebtorsBody) return;
 
@@ -538,25 +701,32 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         reportTopDebtorsBody.innerHTML = topDebtors.map((debtor, index) => {
-            const name = escapeHTML(debtor.full_name || debtor.name || "Unnamed");
-            const phone = escapeHTML(debtor.phone || "Not provided");
-            const balance = formatMoney(debtor.balance ?? debtor.outstanding ?? 0);
+            const name = escapeHTML(
+                debtor.full_name || debtor.name || "Unnamed"
+            );
+
+            const phone = escapeHTML(
+                debtor.phone || "Not provided"
+            );
+
+            const balance = escapeHTML(formatMoney(
+                debtor.balance ?? debtor.outstanding ?? 0
+            ));
 
             return `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>
-                        <strong>${name}</strong>
-                    </td>
+                    <td><strong>${name}</strong></td>
                     <td>${phone}</td>
-                    <td><strong>${escapeHTML(balance)}</strong></td>
+                    <td><strong>${balance}</strong></td>
                 </tr>
             `;
         }).join("");
     }
 
+    // REPORT DISPLAY
     function renderDebtorReport(report) {
-        if (!report) {
+        if (!report || typeof report !== "object") {
             throw new Error("The report data was not returned by the server.");
         }
 
@@ -596,10 +766,14 @@ document.addEventListener("DOMContentLoaded", () => {
         renderTopDebtors(report.top_debtors);
     }
 
+    // LOAD REPORT
     async function loadDebtorReport() {
         if (!reportPeriod || !loadDebtorReportButton) return;
 
+        const thisRequest = ++reportRequestNumber;
+
         showMessage(debtorReportMessage, "");
+
         loadDebtorReportButton.disabled = true;
         loadDebtorReportButton.textContent = "Loading Report...";
 
@@ -615,8 +789,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const endpoint = buildReportEndpoint();
             const result = await apiRequest(endpoint);
 
+            if (thisRequest !== reportRequestNumber) {
+                return;
+            }
+
             if (!result.report) {
-                throw new Error("The server did not return report information.");
+                throw new Error(
+                    "The server did not return report information."
+                );
             }
 
             renderDebtorReport(result.report);
@@ -630,8 +810,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Report generated successfully.",
                 "success"
             );
-
         } catch (error) {
+            if (thisRequest !== reportRequestNumber) {
+                return;
+            }
+
             console.error("Debtor report error:", error);
 
             showMessage(
@@ -639,39 +822,57 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.message || "Unable to generate the report.",
                 "error"
             );
-
         } finally {
-            loadDebtorReportButton.disabled = false;
-            loadDebtorReportButton.textContent = "Generate Report";
+            if (thisRequest === reportRequestNumber) {
+                loadDebtorReportButton.disabled = false;
+                loadDebtorReportButton.textContent = originalReportButtonText;
+            }
         }
     }
 
     // EVENT LISTENERS
-    debtorForm.addEventListener("submit", registerDebtor);
+    if (debtorForm) {
+        debtorForm.addEventListener("submit", registerDebtor);
+    }
 
-    debtorSearch.addEventListener("input", renderDebtors);
-    statusFilter.addEventListener("change", renderDebtors);
+    if (debtorSearch) {
+        debtorSearch.addEventListener("input", renderDebtors);
+    }
 
-    debtorsTableBody.addEventListener("click", event => {
-        const button = event.target.closest(".view-debtor-button");
+    if (statusFilter) {
+        statusFilter.addEventListener("change", renderDebtors);
+    }
 
-        if (!button) return;
+    if (debtorsTableBody) {
+        debtorsTableBody.addEventListener("click", event => {
+            const button = event.target.closest(".view-debtor-button");
 
-        const debtorId = Number(button.dataset.debtorId);
+            if (!button) return;
 
-        if (Number.isInteger(debtorId) && debtorId > 0) {
-            viewDebtor(debtorId);
-        }
-    });
+            const debtorId = Number(button.dataset.debtorId);
 
-    logoutButton.addEventListener("click", logout);
+            if (Number.isInteger(debtorId) && debtorId > 0) {
+                viewDebtor(debtorId);
+            }
+        });
+    }
+
+    if (logoutButton) {
+        logoutButton.addEventListener("click", logout);
+    }
 
     if (reportPeriod) {
-        reportPeriod.addEventListener("change", updateReportFilterVisibility);
+        reportPeriod.addEventListener(
+            "change",
+            updateReportFilterVisibility
+        );
     }
 
     if (loadDebtorReportButton) {
-        loadDebtorReportButton.addEventListener("click", loadDebtorReport);
+        loadDebtorReportButton.addEventListener(
+            "click",
+            loadDebtorReport
+        );
     }
 
     // PAGE INITIALISATION

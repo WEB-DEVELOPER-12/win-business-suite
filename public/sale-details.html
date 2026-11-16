@@ -1,0 +1,1403 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sale Details | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --surface: #111c2e;
+            --surface-light: #192941;
+            --border: #263750;
+            --text: #f4f8ff;
+            --muted: #91a3bb;
+            --cyan: #22c5e8;
+            --green: #13c98a;
+            --orange: #ffbd66;
+            --red: #ff6678;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        .page {
+            width: min(100% - 30px, 950px);
+            margin: 0 auto;
+            padding: 24px 0 45px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .back {
+            width: 43px;
+            height: 43px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 22px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .subtitle {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-button {
+            min-height: 45px;
+            padding: 0 16px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .action-button.primary {
+            border-color: var(--cyan);
+            background: var(--cyan);
+            color: #061521;
+        }
+
+        .action-button:hover {
+            filter: brightness(1.1);
+        }
+
+        .action-button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .sale-centre-link {
+            display: grid;
+            place-items: center;
+            text-decoration: none;
+        }
+
+        .receipt {
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--surface);
+        }
+
+        .receipt-header {
+            padding: 27px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(120deg, #142b42, #111c2e);
+        }
+
+        .brand {
+            color: var(--cyan);
+            font-size: 12px;
+            font-weight: 850;
+            letter-spacing: 2px;
+        }
+
+        .receipt-title {
+            margin: 10px 0 5px;
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .receipt-subtitle {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .receipt-body {
+            padding: 25px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-heading {
+            margin: 0 0 15px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 17px;
+        }
+
+        .detail-label {
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .detail-value {
+            overflow-wrap: anywhere;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .sale-number {
+            color: var(--cyan);
+        }
+
+        .status {
+            display: inline-block;
+            padding: 7px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .status.paid {
+            background: rgba(19, 201, 138, .12);
+            color: var(--green);
+        }
+
+        .status.partial {
+            background: rgba(255, 189, 102, .12);
+            color: var(--orange);
+        }
+
+        .status.unpaid {
+            background: rgba(255, 102, 120, .12);
+            color: var(--red);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 570px;
+        }
+
+        th,
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            font-size: 12px;
+        }
+
+        th {
+            background: var(--surface-light);
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #e5edf8;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .totals {
+            width: min(100%, 390px);
+            margin: 20px 0 0 auto;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 10px 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .total-row strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .total-row.final {
+            margin-top: 5px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .total-row.final strong {
+            color: var(--cyan);
+            font-size: 21px;
+        }
+
+        .total-row.balance strong {
+            color: var(--orange);
+        }
+
+        .payment-card {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-light);
+        }
+
+        .payment-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .payment-method {
+            font-size: 13px;
+            font-weight: 750;
+        }
+
+        .payment-amount {
+            color: var(--green);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .payment-meta {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .payment-source {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: rgba(34, 197, 232, .1);
+            color: var(--cyan);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .notes {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #c3d0e0;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .receipt-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .loading,
+        .error,
+        .empty {
+            padding: 35px 20px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: var(--surface);
+            color: var(--muted);
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .error {
+            color: #ff9aa6;
+        }
+
+        @media (max-width: 550px) {
+            .page {
+                width: min(100% - 22px, 950px);
+                padding-top: 17px;
+            }
+
+            .receipt-header,
+            .receipt-body {
+                padding: 19px;
+            }
+
+            .details-grid {
+                gap: 15px 10px;
+            }
+
+            .detail-value {
+                font-size: 12px;
+            }
+
+            .actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .action-button {
+                padding: 0 9px;
+                font-size: 11px;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 14mm;
+            }
+
+            body {
+                background: #fff;
+                color: #111;
+            }
+
+            .page {
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            .topbar,
+            .actions {
+                display: none !important;
+            }
+
+            .receipt {
+                border: 0;
+                border-radius: 0;
+                background: #fff;
+                color: #111;
+            }
+
+            .receipt-header {
+                background: #fff;
+                border-bottom: 2px solid #ddd;
+            }
+
+            .receipt-body {
+                padding: 20px 0;
+            }
+
+            .brand,
+            .sale-number {
+                color: #087f9e;
+            }
+
+            .receipt-subtitle,
+            .detail-label,
+            .section-heading,
+            .total-row,
+            .payment-meta,
+            .receipt-footer {
+                color: #555;
+            }
+
+            .detail-value,
+            td,
+            .payment-method,
+            .total-row strong {
+                color: #111;
+            }
+
+            .table-wrap,
+            .payment-card,
+            .notes {
+                border-color: #ddd;
+                background: #fff;
+            }
+
+            th {
+                background: #f1f4f7;
+                color: #333;
+            }
+
+            .status {
+                border: 1px solid #aaa;
+                background: #fff !important;
+                color: #111 !important;
+            }
+
+            .total-row.final strong {
+                color: #087f9e;
+            }
+
+            .total-row.balance strong {
+                color: #9b6100;
+            }
+
+            .payment-source {
+                border: 1px solid #ddd;
+                background: #fff;
+                color: #087f9e;
+            }
+
+            .section,
+            .payment-card,
+            .totals {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+
+        <header class="topbar">
+            <a href="/sales-history.html" class="back" aria-label="Back to Sales History">←</a>
+
+            <div>
+                <h1>Sale Details</h1>
+                <p class="subtitle">Transaction information and receipt</p>
+            </div>
+        </header>
+
+        <div class="actions">
+            <button class="action-button primary" id="downloadPdfButton" type="button" disabled>
+                Download PDF
+            </button>
+
+            <button class="action-button" id="printButton" type="button" disabled>
+                Print Receipt
+            </button>
+
+            <a class="action-button sale-centre-link" href="/sales.html">
+                Sale Centre
+            </a>
+        </div>
+
+        <div id="loading" class="loading">
+            Loading sale details...
+        </div>
+
+        <div id="error" class="error" hidden></div>
+
+        <article id="receipt" class="receipt" hidden>
+
+            <header class="receipt-header">
+                <div class="brand">WIN BUSINESS SUITE</div>
+                <div class="receipt-title">Sales Receipt</div>
+                <div class="receipt-subtitle">
+                    Manage Everything. Grow Smarter.
+                </div>
+            </header>
+
+            <div class="receipt-body">
+
+                <section class="section">
+                    <h2 class="section-heading">Transaction information</h2>
+
+                    <div class="details-grid">
+                        <div>
+                            <div class="detail-label">Sale number</div>
+                            <div class="detail-value sale-number" id="saleNumber">—</div>
+                        </div>
+
+                        <div>
+                            <div class="detail-label">Transaction date</div>
+                            <div class="detail-value" id="saleDate">—</div>
+                        </div>
+
+                        <div>
+                            <div class="detail-label">Customer</div>
+                            <div class="detail-value" id="customerName">—</div>
+                        </div>
+
+                        <div>
+                            <div class="detail-label">Cashier</div>
+                            <div class="detail-value" id="cashierName">—</div>
+                        </div>
+
+                        <div>
+                            <div class="detail-label">Payment status</div>
+                            <div>
+                                <span id="paymentStatus" class="status">—</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="detail-label">Transaction ID</div>
+                            <div class="detail-value" id="transactionId">—</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2 class="section-heading">Products sold</h2>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="right">Quantity</th>
+                                    <th class="right">Unit price</th>
+                                    <th class="right">Discount</th>
+                                    <th class="right">Line total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="itemsTable"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="totals">
+                        <div class="total-row">
+                            <span>Subtotal</span>
+                            <strong id="subtotal">KSh 0.00</strong>
+                        </div>
+
+                        <div class="total-row">
+                            <span>Discount</span>
+                            <strong id="discount">KSh 0.00</strong>
+                        </div>
+
+                        <div class="total-row final">
+                            <span>Total amount</span>
+                            <strong id="totalAmount">KSh 0.00</strong>
+                        </div>
+
+                        <div class="total-row">
+                            <span>Total amount paid</span>
+                            <strong id="amountPaid">KSh 0.00</strong>
+                        </div>
+
+                        <div class="total-row balance">
+                            <span>Outstanding balance</span>
+                            <strong id="balanceDue">KSh 0.00</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2 class="section-heading">Payment records</h2>
+                    <div id="paymentsList"></div>
+                </section>
+
+                <section class="section" id="notesSection" hidden>
+                    <h2 class="section-heading">Notes</h2>
+                    <div class="notes" id="saleNotes"></div>
+                </section>
+
+            </div>
+
+            <footer class="receipt-footer">
+                Thank you for your business.<br>
+                WIN BUSINESS SUITE
+            </footer>
+
+        </article>
+
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        const loading = document.getElementById("loading");
+        const errorBox = document.getElementById("error");
+        const receipt = document.getElementById("receipt");
+
+        const downloadPdfButton = document.getElementById("downloadPdfButton");
+        const printButton = document.getElementById("printButton");
+
+        let saleData = null;
+        let saleItems = [];
+        let salePayments = [];
+
+        function money(value) {
+            return Number(value || 0).toLocaleString("en-KE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "Not available";
+
+            const raw = String(value);
+
+            // Avoid timezone shifts for date-only values such as 2026-11-15.
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                const [year, month, day] = raw.split("-").map(Number);
+
+                return new Date(year, month - 1, day).toLocaleDateString(
+                    "en-KE",
+                    {
+                        dateStyle: "medium"
+                    }
+                );
+            }
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return raw;
+            }
+
+            return date.toLocaleString("en-KE", {
+                dateStyle: "medium",
+                timeStyle: "short"
+            });
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function formatMethod(method) {
+            const methods = {
+                cash: "Cash",
+                mpesa: "M-Pesa",
+                bank_transfer: "Bank transfer",
+                other: "Other"
+            };
+
+            return methods[String(method || "").toLowerCase()] ||
+                method ||
+                "Not specified";
+        }
+
+        function getStatus(sale) {
+            const status = String(sale.payment_status || "").toLowerCase();
+            const balance = Number(sale.balance_due || 0);
+            const paid = Number(sale.amount_paid || 0);
+
+            if (status === "paid" || balance <= 0) {
+                return "paid";
+            }
+
+            if (
+                status === "partial" ||
+                status === "partially_paid" ||
+                paid > 0
+            ) {
+                return "partial";
+            }
+
+            return "unpaid";
+        }
+
+        function statusLabel(status) {
+            if (status === "partial") return "Partially paid";
+            if (status === "unpaid") return "Unpaid";
+            return "Paid";
+        }
+
+        function showError(message) {
+            loading.hidden = true;
+            receipt.hidden = true;
+            errorBox.hidden = false;
+            errorBox.textContent = message;
+        }
+
+        function renderItems() {
+            const table = document.getElementById("itemsTable");
+
+            if (!saleItems.length) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            No product items were returned for this sale.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            table.innerHTML = saleItems.map(item => `
+                <tr>
+                    <td>${escapeHTML(item.product_name || "Product")}</td>
+                    <td class="right">${money(item.quantity)}</td>
+                    <td class="right">KSh ${money(item.unit_price)}</td>
+                    <td class="right">KSh ${money(item.discount_amount)}</td>
+                    <td class="right">KSh ${money(item.line_total)}</td>
+                </tr>
+            `).join("");
+        }
+
+        function renderPayments() {
+            const container = document.getElementById("paymentsList");
+
+            if (!salePayments.length) {
+                container.innerHTML = `
+                    <div class="empty">
+                        No payment records are available for this transaction.
+                    </div>
+                `;
+                return;
+            }
+
+            // The API already combines original and later debtor payments.
+            // Render data.payments once; do not append another payment list.
+            container.innerHTML = salePayments.map(payment => {
+                const source = payment.payment_source === "debtor"
+                    ? "Later debtor payment"
+                    : "Original sale payment";
+
+                return `
+                    <div class="payment-card">
+                        <div class="payment-top">
+                            <div class="payment-method">
+                                ${escapeHTML(formatMethod(payment.payment_method))}
+                            </div>
+
+                            <div class="payment-amount">
+                                KSh ${money(payment.amount)}
+                            </div>
+                        </div>
+
+                        <div class="payment-meta">
+                            ${escapeHTML(formatDate(payment.payment_date))}
+                            ${payment.reference
+                                ? `<br>Reference: ${escapeHTML(payment.reference)}`
+                                : ""}
+                            ${payment.notes
+                                ? `<br>Note: ${escapeHTML(payment.notes)}`
+                                : ""}
+                            <br>
+                            <span class="payment-source">
+                                ${escapeHTML(source)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderSale(data) {
+            if (!data || !data.sale) {
+                throw new Error(
+                    "The sale information was not returned by the server."
+                );
+            }
+
+            saleData = data.sale;
+            saleItems = Array.isArray(data.items) ? data.items : [];
+            salePayments = Array.isArray(data.payments) ? data.payments : [];
+
+            document.getElementById("saleNumber").textContent =
+                saleData.sale_number || `Sale #${saleData.id}`;
+
+            document.getElementById("saleDate").textContent =
+                formatDate(saleData.sale_date);
+
+            document.getElementById("customerName").textContent =
+                saleData.customer_name || "Walk-in customer";
+
+            document.getElementById("cashierName").textContent =
+                saleData.cashier_name || "Not available";
+
+            document.getElementById("transactionId").textContent =
+                saleData.id;
+
+            const status = getStatus(saleData);
+            const statusElement = document.getElementById("paymentStatus");
+
+            statusElement.textContent = statusLabel(status);
+            statusElement.className = `status ${status}`;
+
+            document.getElementById("subtotal").textContent =
+                `KSh ${money(saleData.subtotal)}`;
+
+            document.getElementById("discount").textContent =
+                `KSh ${money(saleData.discount_amount)}`;
+
+            document.getElementById("totalAmount").textContent =
+                `KSh ${money(saleData.total_amount)}`;
+
+            document.getElementById("amountPaid").textContent =
+                `KSh ${money(saleData.amount_paid)}`;
+
+            document.getElementById("balanceDue").textContent =
+                `KSh ${money(saleData.balance_due)}`;
+
+            const notesSection = document.getElementById("notesSection");
+
+            if (saleData.notes) {
+                notesSection.hidden = false;
+                document.getElementById("saleNotes").textContent =
+                    saleData.notes;
+            } else {
+                notesSection.hidden = true;
+                document.getElementById("saleNotes").textContent = "";
+            }
+
+            renderItems();
+            renderPayments();
+
+            loading.hidden = true;
+            errorBox.hidden = true;
+            receipt.hidden = false;
+
+            downloadPdfButton.disabled = false;
+            printButton.disabled = false;
+        }
+
+        async function loadSale() {
+            const params = new URLSearchParams(window.location.search);
+            const saleId = params.get("id");
+
+            if (!saleId || !/^\d+$/.test(saleId) || Number(saleId) <= 0) {
+                showError(
+                    "A valid sale ID is required. Open this page from Sales History."
+                );
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/api/sales/${encodeURIComponent(saleId)}`,
+                    {
+                        credentials: "same-origin"
+                    }
+                );
+
+                if (response.status === 401) {
+                    window.location.href = "/login.html";
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (!response.ok || data.success === false) {
+                    throw new Error(
+                        data.message || "Unable to load sale details."
+                    );
+                }
+
+                renderSale(data);
+
+            } catch (error) {
+                showError(
+                    error.message || "Unable to load this sale."
+                );
+            }
+        }
+
+        function addPdfText(doc, text, x, y, maxWidth, fontSize = 10) {
+            doc.setFontSize(fontSize);
+
+            const lines = doc.splitTextToSize(
+                String(text ?? ""),
+                maxWidth
+            );
+
+            doc.text(lines, x, y);
+
+            return y + (lines.length * (fontSize * 0.48));
+        }
+
+        function downloadPdf() {
+            if (!saleData) {
+                alert("Sale information is not available.");
+                return;
+            }
+
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert(
+                    "The PDF service could not load. Check your internet connection and try again."
+                );
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+
+            const doc = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4"
+            });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            const margin = 16;
+            const contentWidth = pageWidth - (margin * 2);
+
+            let y = 19;
+
+            function ensureSpace(requiredHeight) {
+                if (y + requiredHeight > pageHeight - 19) {
+                    doc.addPage();
+                    y = 19;
+                }
+            }
+
+            function line() {
+                doc.setDrawColor(215, 224, 233);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 7;
+            }
+
+            function sectionTitle(title) {
+                ensureSpace(13);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10);
+                doc.setTextColor(65, 85, 110);
+                doc.text(title.toUpperCase(), margin, y);
+
+                y += 7;
+            }
+
+            function detail(label, value, x, rowY, width) {
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(110, 125, 145);
+                doc.text(label, x, rowY);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(25, 40, 60);
+
+                const lines = doc.splitTextToSize(
+                    String(value ?? "Not available"),
+                    width
+                );
+
+                doc.text(lines, x, rowY + 5);
+            }
+
+            // Brand header
+            doc.setFillColor(13, 29, 48);
+            doc.roundedRect(
+                margin,
+                y,
+                contentWidth,
+                31,
+                3,
+                3,
+                "F"
+            );
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(15);
+            doc.setTextColor(34, 197, 232);
+            doc.text("WIN BUSINESS SUITE", margin + 7, y + 11);
+
+            doc.setFontSize(12);
+            doc.setTextColor(255, 255, 255);
+            doc.text("SALES RECEIPT", margin + 7, y + 20);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(205, 220, 235);
+            doc.text(
+                "Manage Everything. Grow Smarter.",
+                margin + 7,
+                y + 26
+            );
+
+            y += 41;
+
+            sectionTitle("Transaction information");
+
+            const half = contentWidth / 2;
+
+            detail(
+                "Sale number",
+                saleData.sale_number || `Sale #${saleData.id}`,
+                margin,
+                y,
+                half - 5
+            );
+
+            detail(
+                "Transaction date",
+                formatDate(saleData.sale_date),
+                margin + half,
+                y,
+                half - 5
+            );
+
+            y += 15;
+
+            detail(
+                "Customer",
+                saleData.customer_name || "Walk-in customer",
+                margin,
+                y,
+                half - 5
+            );
+
+            detail(
+                "Cashier",
+                saleData.cashier_name || "Not available",
+                margin + half,
+                y,
+                half - 5
+            );
+
+            y += 15;
+
+            detail(
+                "Payment status",
+                statusLabel(getStatus(saleData)),
+                margin,
+                y,
+                half - 5
+            );
+
+            detail(
+                "Transaction ID",
+                saleData.id,
+                margin + half,
+                y,
+                half - 5
+            );
+
+            y += 12;
+            line();
+
+            sectionTitle("Products sold");
+
+            const columns = {
+                product: margin + 2,
+                quantity: margin + 82,
+                price: margin + 105,
+                discount: margin + 135,
+                total: pageWidth - margin - 2
+            };
+
+            function drawTableHeader() {
+                doc.setFillColor(239, 244, 248);
+                doc.rect(margin, y - 5, contentWidth, 10, "F");
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(7);
+                doc.setTextColor(65, 80, 100);
+
+                doc.text("PRODUCT", columns.product, y + 1);
+                doc.text("QTY", columns.quantity, y + 1);
+                doc.text("PRICE", columns.price, y + 1);
+                doc.text("DISCOUNT", columns.discount, y + 1);
+
+                doc.text(
+                    "TOTAL",
+                    columns.total,
+                    y + 1,
+                    { align: "right" }
+                );
+
+                y += 12;
+            }
+
+            drawTableHeader();
+
+            saleItems.forEach(item => {
+                const productName = String(
+                    item.product_name || "Product"
+                );
+
+                const productLines = doc.splitTextToSize(
+                    productName,
+                    72
+                );
+
+                const rowHeight = Math.max(
+                    9,
+                    productLines.length * 4 + 3
+                );
+
+                if (y + rowHeight > pageHeight - 25) {
+                    doc.addPage();
+                    y = 19;
+                    sectionTitle("Products sold — continued");
+                    drawTableHeader();
+                }
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(35, 50, 70);
+
+                doc.text(productLines, columns.product, y);
+
+                doc.text(
+                    String(item.quantity ?? 0),
+                    columns.quantity,
+                    y
+                );
+
+                doc.text(
+                    money(item.unit_price),
+                    columns.price,
+                    y
+                );
+
+                doc.text(
+                    money(item.discount_amount),
+                    columns.discount,
+                    y
+                );
+
+                doc.text(
+                    money(item.line_total),
+                    columns.total,
+                    y,
+                    { align: "right" }
+                );
+
+                y += rowHeight;
+
+                doc.setDrawColor(230, 235, 240);
+                doc.line(
+                    margin,
+                    y - 2,
+                    pageWidth - margin,
+                    y - 2
+                );
+            });
+
+            y += 5;
+
+            const totals = [
+                ["Subtotal", saleData.subtotal],
+                ["Discount", saleData.discount_amount],
+                ["TOTAL AMOUNT", saleData.total_amount],
+                ["Amount paid", saleData.amount_paid],
+                ["Outstanding balance", saleData.balance_due]
+            ];
+
+            totals.forEach(([label, value]) => {
+                ensureSpace(10);
+
+                const isFinal = label === "TOTAL AMOUNT";
+                const isBalance = label === "Outstanding balance";
+
+                doc.setFont(
+                    "helvetica",
+                    isFinal || isBalance ? "bold" : "normal"
+                );
+
+                doc.setFontSize(isFinal ? 11 : 9);
+
+                if (isFinal) {
+                    doc.setTextColor(0, 110, 145);
+                } else if (isBalance) {
+                    doc.setTextColor(160, 100, 20);
+                } else {
+                    doc.setTextColor(90, 105, 120);
+                }
+
+                doc.text(label, margin + 80, y);
+
+                doc.text(
+                    `KSh ${money(value)}`,
+                    pageWidth - margin,
+                    y,
+                    { align: "right" }
+                );
+
+                y += isFinal ? 11 : 8;
+            });
+
+            y += 3;
+            line();
+
+            sectionTitle("Payment records");
+
+            if (salePayments.length === 0) {
+                ensureSpace(10);
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(100, 110, 125);
+                doc.text("No payment records available.", margin, y);
+
+                y += 8;
+            } else {
+                salePayments.forEach(payment => {
+                    const source = payment.payment_source === "debtor"
+                        ? "Later debtor payment"
+                        : "Original sale payment";
+
+                    const paymentText = [
+                        `${formatMethod(payment.payment_method)} - KSh ${money(payment.amount)}`,
+                        formatDate(payment.payment_date),
+                        source,
+                        payment.reference
+                            ? `Reference: ${payment.reference}`
+                            : "",
+                        payment.notes
+                            ? `Note: ${payment.notes}`
+                            : ""
+                    ].filter(Boolean).join(" | ");
+
+                    const paymentLines = doc.splitTextToSize(
+                        paymentText,
+                        contentWidth
+                    );
+
+                    const paymentHeight =
+                        paymentLines.length * 4.5 + 5;
+
+                    ensureSpace(paymentHeight);
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    doc.setTextColor(50, 65, 85);
+                    doc.text(paymentLines, margin, y);
+
+                    y += paymentHeight;
+                });
+            }
+
+            if (saleData.notes) {
+                y += 3;
+                sectionTitle("Sale notes");
+
+                const noteLines = doc.splitTextToSize(
+                    String(saleData.notes),
+                    contentWidth
+                );
+
+                const noteHeight = noteLines.length * 4.5 + 5;
+
+                if (y + noteHeight > pageHeight - 22) {
+                    doc.addPage();
+                    y = 19;
+                    sectionTitle("Sale notes — continued");
+                }
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(50, 65, 85);
+                doc.text(noteLines, margin, y);
+
+                y += noteHeight;
+            }
+
+            ensureSpace(20);
+
+            y += 5;
+
+            doc.setDrawColor(215, 224, 233);
+            doc.line(margin, y, pageWidth - margin, y);
+
+            y += 8;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(25, 50, 70);
+
+            doc.text(
+                "Thank you for your business.",
+                pageWidth / 2,
+                y,
+                { align: "center" }
+            );
+
+            y += 5;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8);
+            doc.setTextColor(80, 95, 115);
+
+            doc.text(
+                "WIN BUSINESS SUITE",
+                pageWidth / 2,
+                y,
+                { align: "center" }
+            );
+
+            // Footer and page numbers on every PDF page.
+            const pageCount = doc.internal.getNumberOfPages();
+
+            for (let page = 1; page <= pageCount; page++) {
+                doc.setPage(page);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(7);
+                doc.setTextColor(105, 120, 140);
+
+                doc.text(
+                    "WIN BUSINESS SUITE",
+                    margin,
+                    pageHeight - 7
+                );
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+
+                doc.text(
+                    `Page ${page} of ${pageCount}`,
+                    pageWidth - margin,
+                    pageHeight - 7,
+                    { align: "right" }
+                );
+            }
+
+            const rawName = saleData.sale_number ||
+                `WIN-Sale-${saleData.id}`;
+
+            const safeName = String(rawName)
+                .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+            doc.save(`${safeName}-Receipt.pdf`);
+        }
+
+        downloadPdfButton.addEventListener("click", downloadPdf);
+
+        printButton.addEventListener("click", () => {
+            if (!saleData) return;
+            window.print();
+        });
+
+        loadSale();
+    </script>
+</body>
+</html>

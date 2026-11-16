@@ -72,112 +72,132 @@ router.post("/register", async (req, res) => {
         const passwordHash = await bcrypt.hash(password, 12);
 
         db.serialize(() => {
-            db.run("BEGIN TRANSACTION");
+            db.run("BEGIN TRANSACTION", beginError => {
+                if (beginError) {
+                    return res.status(500).json({
+                        success: false,
+                        message: "Could not begin registration."
+                    });
+                }
 
-            db.run(
-                `INSERT INTO businesses (business_name, business_type)
-                 VALUES (?, ?)`,
-                [cleanBusinessName, cleanBusinessType],
-                function (error) {
-                    if (error) {
-                        return db.run("ROLLBACK", () => {
-                            res.status(500).json({
-                                success: false,
-                                message: "Could not create business."
-                            });
-                        });
-                    }
+                db.run(
+                    `INSERT INTO businesses (business_name, business_type)
+                     VALUES (?, ?)`,
+                    [cleanBusinessName, cleanBusinessType],
+                    function (businessError) {
+                        if (businessError) {
+                            return rollbackWithResponse(
+                                "Could not create business.",
+                                500
+                            );
+                        }
 
-                    const businessId = this.lastID;
+                        const businessId = this.lastID;
 
-                    db.run(
-                        `INSERT INTO users
-                         (business_id, full_name, email, password_hash, role)
-                         VALUES (?, ?, ?, ?, 'owner')`,
-                        [
-                            businessId,
-                            cleanFullName,
-                            normalizedEmail,
-                            passwordHash
-                        ],
-                        function (userError) {
-                            if (userError) {
-                                return db.run("ROLLBACK", () => {
-                                    res.status(409).json({
-                                        success: false,
-                                        message: "Registration failed. This email may already be registered."
-                                    });
-                                });
-                            }
+                        db.run(
+                            `INSERT INTO users
+                             (business_id, full_name, email, password_hash, role)
+                             VALUES (?, ?, ?, ?, 'owner')`,
+                            [
+                                businessId,
+                                cleanFullName,
+                                normalizedEmail,
+                                passwordHash
+                            ],
+                            function (userError) {
+                                if (userError) {
+                                    return rollbackWithResponse(
+                                        "Registration failed. This email may already be registered.",
+                                        409
+                                    );
+                                }
 
-                            // Create the business's 15-day WIN Pro trial
-                            db.run(
-                                `INSERT INTO subscriptions (
-                                    business_id,
-                                    plan_name,
-                                    status,
-                                    trial_started_at,
-                                    trial_ends_at
-                                )
-                                VALUES (
-                                    ?,
-                                    'WIN Pro',
-                                    'trial',
-                                    CURRENT_TIMESTAMP,
-                                    datetime('now', '+15 days')
-                                )`,
-                                [businessId],
-                                (subscriptionError) => {
-                                    if (subscriptionError) {
-                                        console.error(
-                                            "Trial creation error:",
-                                            subscriptionError.message
-                                        );
+                                // Create a pending subscription.
+                                // The free trial starts only when the user
+                                // explicitly clicks Start my free trial.
+                                db.run(
+                                    `INSERT INTO subscriptions (
+                                        business_id,
+                                        plan_name,
+                                        status,
+                                        trial_started_at,
+                                        trial_ends_at
+                                    )
+                                    VALUES (?, 'WIN Pro', 'pending', NULL, NULL)`,
+                                    [businessId],
+                                    subscriptionError => {
+                                        if (subscriptionError) {
+                                            console.error(
+                                                "Pending subscription creation error:",
+                                                subscriptionError.message
+                                            );
 
-                                        return db.run("ROLLBACK", () => {
-                                            res.status(500).json({
-                                                success: false,
-                                                message: "Could not activate your free trial. Please try again."
+                                            return rollbackWithResponse(
+                                                "Could not complete subscription setup.",
+                                                500
+                                            );
+                                        }
+
+                                        db.run("COMMIT", commitError => {
+                                            if (commitError) {
+                                                return db.run(
+                                                    "ROLLBACK",
+                                                    () => {
+                                                        res.status(500).json({
+                                                            success: false,
+                                                            message: "Could not complete registration."
+                                                        });
+                                                    }
+                                                );
+                                            }
+
+                                            res.status(201).json({
+                                                success: true,
+                                                message: "Your business account has been created successfully. Please log in to start your 7-day WIN Pro free trial.",
+                                                business_id: businessId,
+                                                subscription: {
+                                                    plan: "WIN Pro",
+                                                    status: "pending",
+                                                    trial_started: false,
+                                                    duration_days: 7
+                                                }
                                             });
                                         });
                                     }
+                                );
+                            }
+                        );
+                    }
+                );
 
-                                    db.run("COMMIT", (commitError) => {
-                                        if (commitError) {
-                                            return db.run("ROLLBACK", () => {
-                                                res.status(500).json({
-                                                    success: false,
-                                                    message: "Could not complete registration."
-                                                });
-                                            });
-                                        }
-
-                                        res.status(201).json({
-                                            success: true,
-                                            message: "Business account created successfully. Your 15-day WIN Pro trial has started!",
-                                            business_id: businessId,
-                                            trial: {
-                                                plan: "WIN Pro",
-                                                duration_days: 15,
-                                                status: "trial"
-                                            }
-                                        });
-                                    });
-                                }
+                function rollbackWithResponse(message, statusCode) {
+                    db.run("ROLLBACK", rollbackError => {
+                        if (rollbackError) {
+                            console.error(
+                                "Registration rollback error:",
+                                rollbackError.message
                             );
                         }
-                    );
-                }
-            );
-        });
 
+                        if (!res.headersSent) {
+                            res.status(statusCode).json({
+                                success: false,
+                                message
+                            });
+                        }
+                    });
+                }
+            });
+        });
     } catch (error) {
         console.error("Registration error:", error.message);
 
-        res.status(500).json({
-            success: false,
-            message: "An unexpected error occurred."
-        });
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                message: "An unexpected error occurred."
+            });
+        }
     }
 });
 
@@ -232,7 +252,7 @@ router.post("/login", (req, res) => {
                     });
                 }
 
-                req.session.regenerate((sessionError) => {
+                req.session.regenerate(sessionError => {
                     if (sessionError) {
                         return res.status(500).json({
                             success: false,
@@ -248,7 +268,7 @@ router.post("/login", (req, res) => {
                         role: user.role
                     };
 
-                    req.session.save((saveError) => {
+                    req.session.save(saveError => {
                         if (saveError) {
                             return res.status(500).json({
                                 success: false,
@@ -263,7 +283,6 @@ router.post("/login", (req, res) => {
                         });
                     });
                 });
-
             } catch (compareError) {
                 res.status(500).json({
                     success: false,
@@ -325,7 +344,7 @@ router.get("/me", (req, res) => {
 
 // LOGOUT
 router.post("/logout", (req, res) => {
-    req.session.destroy((error) => {
+    req.session.destroy(error => {
         if (error) {
             return res.status(500).json({
                 success: false,

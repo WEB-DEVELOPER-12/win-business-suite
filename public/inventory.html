@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory | WIN Business Suite</title>
+
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/app-pages.css">
 
     <style>
         .inventory-container {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 35px auto;
             padding: 20px;
         }
@@ -50,18 +51,25 @@
         }
 
         .inventory-stat strong {
-            font-size: 27px;
+            font-size: 23px;
             color: #0f172a;
+            overflow-wrap: anywhere;
         }
 
         .inventory-panel {
             margin-bottom: 25px;
         }
 
+        .inventory-panel > p {
+            color: #64748b;
+            margin-top: 6px;
+        }
+
         .inventory-form {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 15px;
+            margin-top: 18px;
         }
 
         .inventory-form label {
@@ -93,12 +101,13 @@
 
         .inventory-table-wrap {
             overflow-x: auto;
+            margin-top: 15px;
         }
 
         .inventory-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 760px;
         }
 
         .inventory-table th,
@@ -111,6 +120,7 @@
         .inventory-table th {
             background: #f1f5f9;
             color: #334155;
+            white-space: nowrap;
         }
 
         .category-group-row td {
@@ -132,19 +142,28 @@
 
         .inventory-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .inventory-actions button {
-            padding: 7px 10px;
+            padding: 7px 9px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
+            font: inherit;
+            font-size: 12px;
         }
 
-        .edit-button {
+        .edit-button,
+        .history-button {
             background: #e0f2fe;
             color: #075985;
+        }
+
+        .adjust-button {
+            background: #dcfce7;
+            color: #166534;
         }
 
         .delete-button {
@@ -163,6 +182,74 @@
             padding: 30px;
         }
 
+        .inventory-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 14px;
+            font-size: 14px;
+        }
+
+        .inventory-secondary-button {
+            background: #e2e8f0;
+            color: #1e293b;
+            border: none;
+            border-radius: 7px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .inventory-danger-button {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            border-radius: 7px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .inventory-primary-button {
+            background: #075985;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .inventory-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .movement-positive {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .movement-negative {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .inventory-small-text {
+            font-size: 13px;
+            color: #64748b;
+        }
+
         @media (max-width: 600px) {
             .inventory-form {
                 grid-template-columns: 1fr;
@@ -170,6 +257,14 @@
 
             .form-full {
                 grid-column: auto;
+            }
+
+            .inventory-container {
+                padding: 12px;
+            }
+
+            .inventory-stat strong {
+                font-size: 21px;
             }
         }
     </style>
@@ -179,6 +274,7 @@
 
 <header class="navbar">
     <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+
     <div class="nav-actions">
         <span id="userName">Loading...</span>
         <button id="logoutButton" class="btn-secondary">Log Out</button>
@@ -200,7 +296,9 @@
         </a>
     </div>
 
+    <!-- INVENTORY SUMMARY -->
     <section class="inventory-stats">
+
         <div class="inventory-stat">
             <h3>Total Products</h3>
             <strong id="totalProducts">0</strong>
@@ -215,9 +313,24 @@
             <h3>Low Stock Products</h3>
             <strong id="lowStockProducts">0</strong>
         </div>
+
+        <div class="inventory-stat">
+            <h3>Stock Cost Value</h3>
+            <strong id="stockCostValue">KSh 0.00</strong>
+            <p class="inventory-small-text">Based on buying prices</p>
+        </div>
+
+        <div class="inventory-stat">
+            <h3>Potential Sales Value</h3>
+            <strong id="potentialSalesValue">KSh 0.00</strong>
+            <p class="inventory-small-text">Based on selling prices</p>
+        </div>
+
     </section>
 
+    <!-- ADD AND EDIT PRODUCT -->
     <section class="inventory-panel">
+
         <h2 id="formTitle">Add New Product</h2>
         <p>Enter your product information below.</p>
 
@@ -225,8 +338,13 @@
 
             <div class="form-full">
                 <label for="product_name">Product Name *</label>
-                <input type="text" id="product_name" maxlength="150"
-                       placeholder="Enter product name" required>
+                <input
+                    type="text"
+                    id="product_name"
+                    maxlength="150"
+                    placeholder="Enter product name"
+                    required
+                >
             </div>
 
             <div class="form-full">
@@ -238,42 +356,75 @@
 
             <div class="form-full">
                 <label for="description">Description</label>
-                <textarea id="description"
-                          placeholder="Optional product description"></textarea>
+                <textarea
+                    id="description"
+                    placeholder="Optional product description"
+                ></textarea>
             </div>
 
             <div>
                 <label for="selling_price">Selling Price (KES) *</label>
-                <input type="number" id="selling_price"
-                       min="0" step="0.01" required>
+                <input
+                    type="number"
+                    id="selling_price"
+                    min="0"
+                    step="0.01"
+                    required
+                >
             </div>
 
             <div>
                 <label for="buying_price">Buying Price (KES)</label>
-                <input type="number" id="buying_price"
-                       min="0" step="0.01" value="0">
+                <input
+                    type="number"
+                    id="buying_price"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                >
             </div>
 
-            <div>
-                <label for="stock_quantity">Stock Quantity *</label>
-                <input type="number" id="stock_quantity"
-                       min="0" step="0.01" value="0" required>
+            <div id="openingStockField">
+                <label for="stock_quantity">Opening Stock Quantity *</label>
+                <input
+                    type="number"
+                    id="stock_quantity"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    required
+                >
+                <p class="inventory-small-text">
+                    Used only when creating a new product.
+                </p>
             </div>
 
             <div>
                 <label for="low_stock_level">Low Stock Alert Level</label>
-                <input type="number" id="low_stock_level"
-                       min="0" step="0.01" value="5">
+                <input
+                    type="number"
+                    id="low_stock_level"
+                    min="0"
+                    step="0.01"
+                    value="5"
+                >
             </div>
 
             <div class="form-full">
-                <button type="submit" id="saveProductButton"
-                        class="btn-primary">
+                <button
+                    type="submit"
+                    id="saveProductButton"
+                    class="btn-primary"
+                >
                     Add Product
                 </button>
 
-                <button type="button" id="cancelEditButton"
-                        class="btn-secondary" hidden>
+                <button
+                    type="button"
+                    id="cancelEditButton"
+                    class="btn-secondary"
+                    hidden
+                >
                     Cancel Edit
                 </button>
 
@@ -281,19 +432,91 @@
             </div>
 
         </form>
+
+        <div class="inventory-note">
+            Stock quantities are managed separately from product details.
+            Use Stock Adjustment to record stock additions or reductions.
+        </div>
+
     </section>
 
+    <!-- STOCK ADJUSTMENT -->
+    <section class="inventory-panel" id="stockAdjustmentPanel">
+
+        <h2>Stock Adjustment</h2>
+        <p>
+            Record additional stock, damaged goods, missing stock or
+            corrections. Every adjustment requires a reason.
+        </p>
+
+        <form id="adjustmentForm" class="inventory-form">
+
+            <div class="form-full">
+                <label for="adjustmentProductId">Select Product *</label>
+                <select id="adjustmentProductId" required>
+                    <option value="">Select a product</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="adjustmentQuantity">Quantity Change *</label>
+                <input
+                    type="number"
+                    id="adjustmentQuantity"
+                    step="0.01"
+                    placeholder="Example: 10 or -2"
+                    required
+                >
+                <p class="inventory-small-text">
+                    Positive number adds stock. Negative number reduces stock.
+                </p>
+            </div>
+
+            <div>
+                <label for="adjustmentReason">Reason *</label>
+                <input
+                    type="text"
+                    id="adjustmentReason"
+                    maxlength="250"
+                    placeholder="Explain why stock is changing"
+                    required
+                >
+            </div>
+
+            <div class="form-full">
+                <button
+                    type="submit"
+                    id="saveAdjustmentButton"
+                    class="inventory-primary-button"
+                >
+                    Save Stock Adjustment
+                </button>
+
+                <p id="adjustmentMessage" class="inventory-message"></p>
+            </div>
+
+        </form>
+
+    </section>
+
+    <!-- PRODUCT INVENTORY -->
     <section class="inventory-panel">
+
         <h2>Product Inventory</h2>
         <p>View and manage your products, organised by category.</p>
 
-        <input type="search" id="productSearch"
-               class="inventory-search"
-               placeholder="Search products..."
-               style="margin: 15px 0;">
+        <input
+            type="search"
+            id="productSearch"
+            class="inventory-search"
+            placeholder="Search products..."
+            style="margin: 15px 0;"
+        >
 
         <div class="inventory-table-wrap">
+
             <table class="inventory-table">
+
                 <thead>
                     <tr>
                         <th>Product</th>
@@ -312,10 +535,77 @@
                         </td>
                     </tr>
                 </tbody>
+
             </table>
+
         </div>
 
         <p id="tableMessage" class="inventory-message"></p>
+
+    </section>
+
+    <!-- STOCK MOVEMENT HISTORY -->
+    <section class="inventory-panel" id="movementHistoryPanel">
+
+        <div class="inventory-section-header">
+            <div>
+                <h2>Stock Movement History</h2>
+                <p>See recorded stock changes for each product.</p>
+            </div>
+
+            <button
+                type="button"
+                id="closeHistoryButton"
+                class="inventory-secondary-button"
+                hidden
+            >
+                Close History
+            </button>
+        </div>
+
+        <div style="margin-top: 15px;">
+            <label for="historyProductId">
+                Select Product
+            </label>
+
+            <select
+                id="historyProductId"
+                class="inventory-search"
+            >
+                <option value="">Select a product to view history</option>
+            </select>
+        </div>
+
+        <div class="inventory-table-wrap">
+
+            <table class="inventory-table">
+
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Movement</th>
+                        <th>Before</th>
+                        <th>Change</th>
+                        <th>After</th>
+                        <th>Reason</th>
+                        <th>Recorded By</th>
+                    </tr>
+                </thead>
+
+                <tbody id="movementTableBody">
+                    <tr>
+                        <td colspan="7" class="inventory-empty">
+                            Select a product to view its stock history.
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <p id="historyMessage" class="inventory-message"></p>
+
     </section>
 
     <footer class="dashboard-footer">

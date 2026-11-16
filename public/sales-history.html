@@ -1,0 +1,2103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --surface: #111c2e;
+            --surface-light: #192941;
+            --border: #263750;
+            --text: #f4f8ff;
+            --muted: #91a3bb;
+            --cyan: #22c5e8;
+            --green: #13c98a;
+            --red: #ff6678;
+            --orange: #ffbd66;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        .page {
+            width: min(100% - 30px, 1100px);
+            margin: 0 auto;
+            padding: 25px 0 45px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .back {
+            width: 43px;
+            height: 43px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 22px;
+        }
+
+        h1 { margin: 0; font-size: 24px; }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .report-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(34, 197, 232, .25);
+            border-radius: 17px;
+            background: linear-gradient(120deg, #142b42, #111c2e);
+        }
+
+        .report-info h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .report-info p {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .report-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input, select {
+            min-height: 45px;
+            padding: 0 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+            background: var(--surface-light);
+            color: var(--text);
+            font: inherit;
+            font-size: 13px;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--cyan);
+        }
+
+        input::placeholder { color: #71839b; }
+
+        #periodValue { min-width: 155px; }
+
+        .download-button {
+            min-height: 45px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 10px;
+            background: var(--cyan);
+            color: #061521;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .download-button:hover { filter: brightness(1.08); }
+
+        .download-button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 12px;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            background: var(--surface);
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+            color: #c3d0e0;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .field input, .field select { width: 100%; }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: var(--surface);
+        }
+
+        .summary-card span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .summary-card strong {
+            display: block;
+            margin-top: 9px;
+            font-size: 22px;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 27px 0 14px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+            font-size: 17px;
+        }
+
+        .count {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .sales-list {
+            display: grid;
+            gap: 11px;
+        }
+
+        .sale-card {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 17px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: var(--surface);
+            transition: border-color .2s;
+        }
+
+        .sale-card:hover { border-color: #3c5b7c; }
+
+        .sale-number {
+            color: var(--cyan);
+            font-size: 14px;
+            font-weight: 750;
+        }
+
+        .sale-customer {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .data-label {
+            margin-bottom: 5px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .data-value {
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .status.paid {
+            background: rgba(19, 201, 138, .12);
+            color: var(--green);
+        }
+
+        .status.partial {
+            background: rgba(255, 189, 102, .12);
+            color: var(--orange);
+        }
+
+        .status.unpaid {
+            background: rgba(255, 102, 120, .12);
+            color: var(--red);
+        }
+
+        .details-link {
+            display: inline-block;
+            padding: 10px 13px;
+            border: 1px solid rgba(34, 197, 232, .3);
+            border-radius: 10px;
+            color: var(--cyan);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .details-link:hover {
+            background: rgba(34, 197, 232, .08);
+        }
+
+        .empty, .loading, .error {
+            padding: 35px 18px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: var(--surface);
+            color: var(--muted);
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .error { color: #ff9aa6; }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 22px;
+        }
+
+        .pagination button {
+            min-height: 39px;
+            padding: 0 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        #pageInfo {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 850px) {
+            .toolbar { grid-template-columns: 1fr 1fr; }
+
+            .sale-card { grid-template-columns: 1fr 1fr; }
+
+            .sale-card .sale-main { grid-column: 1 / -1; }
+
+            .details-link { width: 100%; }
+
+            .report-panel {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .page {
+                width: min(100% - 22px, 1100px);
+                padding-top: 18px;
+            }
+
+            .toolbar { grid-template-columns: 1fr; }
+
+            .report-controls {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .report-controls select,
+            .report-controls input,
+            .download-button {
+                width: 100%;
+            }
+
+            .summary { gap: 8px; }
+
+            .summary-card { padding: 12px; }
+
+            .summary-card strong { font-size: 16px; }
+
+            .summary-card span { font-size: 10px; }
+
+            .sale-card {
+                gap: 13px 9px;
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+
+        <header class="topbar">
+            <a href="/sales.html" class="back" aria-label="Back to Sale Centre">←</a>
+
+            <div>
+                <h1>Sales History</h1>
+                <p class="subtitle">View, search and download your sales records</p>
+            </div>
+        </header>
+
+        <section class="report-panel">
+            <div class="report-info">
+                <h2>Download Sales Report</h2>
+                <p>
+                    Choose daily, weekly, monthly or yearly sales.
+                    Your PDF includes transaction records and a final business summary.
+                </p>
+            </div>
+
+            <div class="report-controls">
+                <select id="reportPeriod" aria-label="Choose report period">
+                    <option value="daily">Daily Sales PDF</option>
+                    <option value="weekly">Weekly Sales PDF</option>
+                    <option value="monthly" selected>Monthly Sales PDF</option>
+                    <option value="yearly">Yearly Sales PDF</option>
+                </select>
+
+                <input id="periodValue" aria-label="Choose report date">
+
+                <button id="downloadReportButton" class="download-button" type="button">
+                    Download Sales PDF
+                </button>
+            </div>
+        </section>
+
+        <section class="toolbar">
+            <div class="field">
+                <label for="searchInput">Search sales</label>
+                <input
+                    id="searchInput"
+                    type="search"
+                    placeholder="Sale number or customer..."
+                >
+            </div>
+
+            <div class="field">
+                <label for="fromDate">From date</label>
+                <input id="fromDate" type="date">
+            </div>
+
+            <div class="field">
+                <label for="toDate">To date</label>
+                <input id="toDate" type="date">
+            </div>
+
+            <div class="field">
+                <label for="statusFilter">Payment status</label>
+                <select id="statusFilter">
+                    <option value="">All statuses</option>
+                    <option value="paid">Paid</option>
+                    <option value="partial">Partially paid</option>
+                    <option value="unpaid">Unpaid</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="summary">
+            <div class="summary-card">
+                <span>Sales displayed</span>
+                <strong id="salesCount">—</strong>
+            </div>
+
+            <div class="summary-card">
+                <span>Total sales value</span>
+                <strong id="salesTotal">—</strong>
+            </div>
+
+            <div class="summary-card">
+                <span>Outstanding balance</span>
+                <strong id="outstandingTotal">—</strong>
+            </div>
+        </section>
+
+        <div class="section-heading">
+            <h2>Recorded transactions</h2>
+            <span class="count" id="resultCount">Loading...</span>
+        </div>
+
+        <section id="salesList" class="sales-list">
+            <div class="loading">Loading sales history...</div>
+        </section>
+
+        <div class="pagination">
+            <button id="previousButton" type="button" disabled>Previous</button>
+            <span id="pageInfo">Page 1</span>
+            <button id="nextButton" type="button" disabled>Next</button>
+        </div>
+
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        const salesList = document.getElementById("salesList");
+        const searchInput = document.getElementById("searchInput");
+        const fromDate = document.getElementById("fromDate");
+        const toDate = document.getElementById("toDate");
+        const statusFilter = document.getElementById("statusFilter");
+
+        const reportPeriod = document.getElementById("reportPeriod");
+        const periodValue = document.getElementById("periodValue");
+        const downloadReportButton = document.getElementById("downloadReportButton");
+
+        const salesCount = document.getElementById("salesCount");
+        const salesTotal = document.getElementById("salesTotal");
+        const outstandingTotal = document.getElementById("outstandingTotal");
+        const resultCount = document.getElementById("resultCount");
+
+        const previousButton = document.getElementById("previousButton");
+        const nextButton = document.getElementById("nextButton");
+        const pageInfo = document.getElementById("pageInfo");
+
+        const PAGE_SIZE = 20;
+        const API_PAGE_SIZE = 100;
+
+        let allSales = [];
+        let filteredSales = [];
+        let currentPage = 1;
+        let searchTimer = null;
+
+        // Default currency is KES until the saved business profile loads.
+        let summaryCurrencyLabel = "KSh";
+
+        function money(value) {
+            const number = Number(value || 0);
+
+            return (Number.isFinite(number) ? number : 0).toLocaleString("en-KE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // FIXED DATE DISPLAY
+        // Date-only values remain on their original calendar date.
+        // Actual timestamps continue displaying both date and time.
+        function formatDate(value) {
+            if (!value) return "Date unavailable";
+
+            const text = String(value).trim();
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+                const [year, month, day] = text.split("-").map(Number);
+
+                const date = new Date(year, month - 1, day);
+
+                if (
+                    date.getFullYear() !== year ||
+                    date.getMonth() !== month - 1 ||
+                    date.getDate() !== day
+                ) {
+                    return text;
+                }
+
+                return date.toLocaleDateString("en-KE", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
+                });
+            }
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return text;
+            }
+
+            return date.toLocaleString("en-KE", {
+                dateStyle: "medium",
+                timeStyle: "short"
+            });
+        }
+
+        function getDateOnly(value) {
+            if (!value) return "";
+
+            const text = String(value);
+
+            if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+                return text.slice(0, 10);
+            }
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) return "";
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+
+            return `${year}-${month}-${day}`;
+        }
+
+        function localDateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+
+            return `${year}-${month}-${day}`;
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+            })[character]);
+        }
+
+        function getStatus(sale) {
+            const status = String(sale.payment_status || "").toLowerCase();
+            const balance = Number(sale.balance_due || 0);
+            const paid = Number(sale.amount_paid || 0);
+
+            if (status === "paid" || balance <= 0) {
+                return "paid";
+            }
+
+            if (
+                status === "partial" ||
+                status === "partially_paid" ||
+                paid > 0
+            ) {
+                return "partial";
+            }
+
+            return "unpaid";
+        }
+
+        function statusLabel(status) {
+            if (status === "partial") return "Partially paid";
+            if (status === "unpaid") return "Unpaid";
+            return "Paid";
+        }
+
+        function extractSales(data) {
+            if (Array.isArray(data)) return data;
+
+            return data.sales ||
+                data.results ||
+                data.data ||
+                [];
+        }
+
+        function getToday() {
+            return localDateString(new Date());
+        }
+
+        function setPeriodInput() {
+            const period = reportPeriod.value;
+            const today = getToday();
+
+            if (period === "daily" || period === "weekly") {
+                periodValue.type = "date";
+                periodValue.value = today;
+                periodValue.removeAttribute("min");
+                periodValue.removeAttribute("max");
+            } else if (period === "monthly") {
+                periodValue.type = "month";
+                periodValue.value = today.slice(0, 7);
+                periodValue.removeAttribute("min");
+                periodValue.removeAttribute("max");
+            } else {
+                periodValue.type = "number";
+                periodValue.min = "2000";
+                periodValue.max = "2100";
+                periodValue.step = "1";
+                periodValue.value = String(new Date().getFullYear());
+            }
+        }
+
+        setPeriodInput();
+
+        async function apiGet(url) {
+            const response = await fetch(url, {
+                credentials: "same-origin"
+            });
+
+            if (response.status === 401) {
+                window.location.href = "/login.html";
+                throw new Error("Your session has expired.");
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || "Unable to load sales.");
+            }
+
+            return data;
+        }
+
+        async function fetchSalesPages(startDate = "", endDate = "") {
+            const sales = [];
+            let page = 1;
+            let totalPages = 1;
+
+            do {
+                const params = new URLSearchParams({
+                    page: String(page),
+                    limit: String(API_PAGE_SIZE)
+                });
+
+                if (startDate) params.set("start_date", startDate);
+                if (endDate) params.set("end_date", endDate);
+
+                const data = await apiGet(`/api/sales?${params.toString()}`);
+                const pageSales = extractSales(data);
+
+                sales.push(...pageSales);
+
+                const pagination = data.pagination || {};
+
+                if (pagination.total_pages !== undefined) {
+                    totalPages = Math.max(
+                        1,
+                        Number(pagination.total_pages) || 1
+                    );
+                } else {
+                    totalPages = pageSales.length === API_PAGE_SIZE
+                        ? page + 1
+                        : page;
+                }
+
+                page++;
+            } while (page <= totalPages);
+
+            return sales;
+        }
+
+        async function loadSales() {
+            salesList.innerHTML = '<div class="loading">Loading sales history...</div>';
+
+            try {
+                allSales = await fetchSalesPages();
+
+                /*
+                 * Load the business currency for the webpage summary cards.
+                 * If profile loading fails, keep the KSh fallback so that
+                 * the sales history itself remains available.
+                 */
+                try {
+                    const profile = await fetchBusinessProfile();
+                    summaryCurrencyLabel = getCurrencyLabel(profile);
+                } catch (profileError) {
+                    console.warn(
+                        "Could not load business currency. Using KSh fallback:",
+                        profileError.message
+                    );
+                    summaryCurrencyLabel = "KSh";
+                }
+
+                currentPage = 1;
+                applyFilters();
+
+            } catch (error) {
+                salesList.innerHTML = `
+                    <div class="error">${escapeHTML(error.message)}</div>
+                `;
+
+                resultCount.textContent = "Unable to load";
+            }
+        }
+
+        function applyFilters() {
+            const search = searchInput.value.trim().toLowerCase();
+            const start = fromDate.value;
+            const end = toDate.value;
+            const selectedStatus = statusFilter.value;
+
+            filteredSales = allSales.filter(sale => {
+                const saleNumber = String(
+                    sale.sale_number || ""
+                ).toLowerCase();
+
+                const customer = String(
+                    sale.customer_name || ""
+                ).toLowerCase();
+
+                const matchesSearch =
+                    !search ||
+                    saleNumber.includes(search) ||
+                    customer.includes(search);
+
+                const saleDate = getDateOnly(sale.sale_date);
+
+                const matchesStart = !start || saleDate >= start;
+                const matchesEnd = !end || saleDate <= end;
+
+                const matchesStatus =
+                    !selectedStatus ||
+                    getStatus(sale) === selectedStatus;
+
+                return matchesSearch &&
+                    matchesStart &&
+                    matchesEnd &&
+                    matchesStatus;
+            });
+
+            currentPage = 1;
+            renderSales();
+        }
+
+        function renderSales() {
+            const totalPages = Math.max(
+                1,
+                Math.ceil(filteredSales.length / PAGE_SIZE)
+            );
+
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+            const visibleSales = filteredSales.slice(
+                startIndex,
+                startIndex + PAGE_SIZE
+            );
+
+            const totalValue = filteredSales.reduce(
+                (sum, sale) => sum + Number(sale.total_amount || 0),
+                0
+            );
+
+            const totalOutstanding = filteredSales.reduce(
+                (sum, sale) => sum + Number(sale.balance_due || 0),
+                0
+            );
+
+            salesCount.textContent = filteredSales.length;
+            salesTotal.textContent =
+                `${summaryCurrencyLabel} ${money(totalValue)}`;
+
+            outstandingTotal.textContent =
+                `${summaryCurrencyLabel} ${money(totalOutstanding)}`;
+
+            resultCount.textContent =
+                `${filteredSales.length} transaction${filteredSales.length === 1 ? "" : "s"}`;
+
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+            previousButton.disabled = currentPage <= 1;
+            nextButton.disabled = currentPage >= totalPages;
+
+            if (visibleSales.length === 0) {
+                salesList.innerHTML = `
+                    <div class="empty">
+                        <strong>No sales found</strong><br>
+                        No transactions match your current search or filters.
+                    </div>
+                `;
+                return;
+            }
+
+            salesList.innerHTML = visibleSales.map(sale => {
+                const status = getStatus(sale);
+
+                const saleNumber = escapeHTML(
+                    sale.sale_number || `Sale #${sale.id}`
+                );
+
+                const customer = escapeHTML(
+                    sale.customer_name || "Walk-in customer"
+                );
+
+                const saleId = encodeURIComponent(sale.id);
+
+                return `
+                    <article class="sale-card">
+                        <div class="sale-main">
+                            <div class="sale-number">${saleNumber}</div>
+                            <div class="sale-customer">${customer}</div>
+                            <div class="sale-customer">
+                                ${escapeHTML(formatDate(sale.sale_date))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="data-label">Total amount</div>
+                            <div class="data-value">
+                                ${escapeHTML(summaryCurrencyLabel)} ${money(sale.total_amount)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="data-label">Amount paid</div>
+                            <div class="data-value">
+                                ${escapeHTML(summaryCurrencyLabel)} ${money(sale.amount_paid)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="data-label">Payment status</div>
+                            <span class="status ${status}">
+                                ${statusLabel(status)}
+                            </span>
+                        </div>
+
+                        <a
+                            class="details-link"
+                            href="/sale-details.html?id=${saleId}"
+                        >
+                            View details
+                        </a>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        /*
+         * REPORT PERIODS
+         */
+
+        function getReportRange() {
+            const period = reportPeriod.value;
+            const selected = periodValue.value;
+
+            if (!selected) {
+                throw new Error("Please select a date or year for your report.");
+            }
+
+            if (period === "daily") {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) {
+                    throw new Error("Please select a valid date.");
+                }
+
+                return {
+                    startDate: selected,
+                    endDate: selected,
+                    label: `Daily Report - ${selected}`,
+                    fileName: `WIN-Daily-Sales-${selected}`
+                };
+            }
+
+            if (period === "weekly") {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) {
+                    throw new Error("Please select a valid date.");
+                }
+
+                const chosenDate = new Date(`${selected}T12:00:00`);
+
+                if (Number.isNaN(chosenDate.getTime())) {
+                    throw new Error("Please select a valid date.");
+                }
+
+                const day = chosenDate.getDay();
+                const daysFromMonday = (day + 6) % 7;
+
+                const monday = new Date(chosenDate);
+                monday.setDate(chosenDate.getDate() - daysFromMonday);
+
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+
+                const startDate = localDateString(monday);
+                const endDate = localDateString(sunday);
+
+                return {
+                    startDate,
+                    endDate,
+                    label: `Weekly Report - ${startDate} to ${endDate}`,
+                    fileName: `WIN-Weekly-Sales-${startDate}`
+                };
+            }
+
+            if (period === "monthly") {
+                if (!/^\d{4}-\d{2}$/.test(selected)) {
+                    throw new Error("Please select a valid month.");
+                }
+
+                const [year, month] = selected.split("-").map(Number);
+
+                if (month < 1 || month > 12) {
+                    throw new Error("Please select a valid month.");
+                }
+
+                const lastDay = new Date(year, month, 0).getDate();
+
+                const startDate =
+                    `${year}-${String(month).padStart(2, "0")}-01`;
+
+                const endDate =
+                    `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+                const monthName = new Date(year, month - 1, 1)
+                    .toLocaleDateString("en-KE", {
+                        month: "long",
+                        year: "numeric"
+                    });
+
+                return {
+                    startDate,
+                    endDate,
+                    label: `Monthly Report - ${monthName}`,
+                    fileName: `WIN-Monthly-Sales-${selected}`
+                };
+            }
+
+            if (period === "yearly") {
+                if (!/^\d{4}$/.test(selected)) {
+                    throw new Error("Please enter a valid year.");
+                }
+
+                const year = Number(selected);
+
+                if (year < 2000 || year > 2100) {
+                    throw new Error("Please enter a year between 2000 and 2100.");
+                }
+
+                return {
+                    startDate: `${year}-01-01`,
+                    endDate: `${year}-12-31`,
+                    label: `Yearly Report - ${year}`,
+                    fileName: `WIN-Yearly-Sales-${year}`
+                };
+            }
+
+            throw new Error("Please choose a valid report period.");
+        }
+
+        /*
+         * BUSINESS PROFILE
+         */
+
+        async function fetchBusinessProfile() {
+            const data = await apiGet("/api/business-settings");
+
+            if (!data.business) {
+                throw new Error("Business profile information was not returned.");
+            }
+
+            return data.business;
+        }
+
+        function getCurrencyLabel(profile) {
+            const currency = String(profile?.currency || "KES").trim();
+
+            if (!currency) return "KES";
+
+            if (currency.toUpperCase() === "KES") return "KSh";
+
+            return currency;
+        }
+
+        function formatCurrency(value, profile) {
+            return `${getCurrencyLabel(profile)} ${money(value)}`;
+        }
+
+        /*
+         * SALE DETAILS
+         */
+
+        async function fetchSaleDetails(sale) {
+            if (!sale.id) return null;
+
+            try {
+                return await apiGet(
+                    `/api/sales/${encodeURIComponent(sale.id)}`
+                );
+            } catch (error) {
+                console.warn(
+                    `Could not load details for sale ${sale.id}:`,
+                    error.message
+                );
+
+                return null;
+            }
+        }
+
+        function getDetailItems(detail) {
+            return Array.isArray(detail?.items)
+                ? detail.items
+                : [];
+        }
+
+        function getDetailPayments(detail) {
+            return Array.isArray(detail?.payments)
+                ? detail.payments
+                : [];
+        }
+
+        function firstNumber(object, fields) {
+            for (const field of fields) {
+                const value = object?.[field];
+
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    value !== ""
+                ) {
+                    const number = Number(value);
+
+                    if (Number.isFinite(number)) {
+                        return number;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        function getItemQuantity(item) {
+            return firstNumber(item, ["quantity"]) ?? 0;
+        }
+
+        function getItemName(item) {
+            return String(
+                item?.product_name || "Unnamed product"
+            );
+        }
+
+        function getItemRevenue(item) {
+            return firstNumber(item, ["line_total"]) ?? 0;
+        }
+
+        function getItemCost(item) {
+            const unitCost = firstNumber(item, ["unit_cost"]);
+
+            if (unitCost === null) return null;
+
+            return unitCost * getItemQuantity(item);
+        }
+
+        function getPaymentMethod(payment) {
+            const method = String(
+                payment?.payment_method || "other"
+            ).trim().toLowerCase();
+
+            return method.replace(/_/g, " ") || "other";
+        }
+
+        function getSaleFallbackPaymentMethod(sale) {
+            return getPaymentMethod({
+                payment_method: sale?.payment_method || "other"
+            });
+        }
+
+        function getPaymentAmount(payment) {
+            const amount = Number(payment?.amount || 0);
+
+            return Number.isFinite(amount) && amount > 0
+                ? amount
+                : 0;
+        }
+
+        async function buildReportAnalysis(sales) {
+            const productStats = new Map();
+            const customerStats = new Map();
+            const paymentStats = new Map();
+
+            let costOfGoods = 0;
+            let costDataAvailable = true;
+            let itemCount = 0;
+            let detailsLoaded = 0;
+            let totalPaid = 0;
+
+            const totalSales = sales.reduce(
+                (sum, sale) => sum + Number(sale.total_amount || 0),
+                0
+            );
+
+            const totalOutstanding = sales.reduce(
+                (sum, sale) => sum + Number(sale.balance_due || 0),
+                0
+            );
+
+            const totalDiscount = sales.reduce(
+                (sum, sale) => sum + Number(sale.discount_amount || 0),
+                0
+            );
+
+            for (const sale of sales) {
+                const customerName = String(
+                    sale.customer_name || ""
+                ).trim();
+
+                if (
+                    customerName &&
+                    customerName.toLowerCase() !== "walk-in customer"
+                ) {
+                    const existing = customerStats.get(customerName) || {
+                        name: customerName,
+                        sales: 0,
+                        transactions: 0
+                    };
+
+                    existing.sales += Number(sale.total_amount || 0);
+                    existing.transactions += 1;
+
+                    customerStats.set(customerName, existing);
+                }
+            }
+
+            const details = [];
+
+            for (let index = 0; index < sales.length; index += 5) {
+                const batch = sales.slice(index, index + 5);
+
+                const batchResults = await Promise.all(
+                    batch.map(sale => fetchSaleDetails(sale))
+                );
+
+                details.push(...batchResults);
+            }
+
+            details.forEach((detail, index) => {
+                const sale = sales[index];
+
+                if (!detail) {
+                    const fallbackPaid = Number(sale.amount_paid || 0);
+
+                    if (fallbackPaid > 0) {
+                        const method = getSaleFallbackPaymentMethod(sale);
+
+                        totalPaid += fallbackPaid;
+
+                        paymentStats.set(
+                            method,
+                            (paymentStats.get(method) || 0) + fallbackPaid
+                        );
+                    }
+
+                    costDataAvailable = false;
+                    return;
+                }
+
+                detailsLoaded++;
+
+                const items = getDetailItems(detail);
+                const payments = getDetailPayments(detail);
+
+                if (items.length === 0) {
+                    costDataAvailable = false;
+                }
+
+                items.forEach(item => {
+                    itemCount++;
+
+                    const name = getItemName(item);
+                    const quantity = getItemQuantity(item);
+                    const revenue = getItemRevenue(item);
+                    const cost = getItemCost(item);
+
+                    const existing = productStats.get(name) || {
+                        name,
+                        quantity: 0,
+                        revenue: 0,
+                        cost: 0,
+                        costKnown: true
+                    };
+
+                    existing.quantity += quantity;
+                    existing.revenue += revenue;
+
+                    if (cost === null) {
+                        existing.costKnown = false;
+                        costDataAvailable = false;
+                    } else {
+                        existing.cost += cost;
+                        costOfGoods += cost;
+                    }
+
+                    productStats.set(name, existing);
+                });
+
+                /*
+                 * The backend payments array already combines original
+                 * sale payments and later payments allocated to that sale.
+                 * Count it only once.
+                 */
+
+                if (payments.length > 0) {
+                    payments.forEach(payment => {
+                        const amount = getPaymentAmount(payment);
+
+                        if (amount <= 0) return;
+
+                        const method = getPaymentMethod(payment);
+
+                        totalPaid += amount;
+
+                        paymentStats.set(
+                            method,
+                            (paymentStats.get(method) || 0) + amount
+                        );
+                    });
+                } else {
+                    const fallbackPaid = Number(sale.amount_paid || 0);
+
+                    if (fallbackPaid > 0) {
+                        const method = getSaleFallbackPaymentMethod(sale);
+
+                        totalPaid += fallbackPaid;
+
+                        paymentStats.set(
+                            method,
+                            (paymentStats.get(method) || 0) + fallbackPaid
+                        );
+                    }
+                }
+            });
+
+            const bestSellingProducts = [...productStats.values()]
+                .sort((a, b) => b.quantity - a.quantity)
+                .slice(0, 10);
+
+            const topEarningProducts = [...productStats.values()]
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 10);
+
+            const topCustomers = [...customerStats.values()]
+                .sort((a, b) => b.sales - a.sales)
+                .slice(0, 10);
+
+            const paymentMethods = [...paymentStats.entries()]
+                .map(([method, amount]) => ({ method, amount }))
+                .sort((a, b) => b.amount - a.amount);
+
+            const costAvailable = sales.length === 0 ||
+                (itemCount > 0 && costDataAvailable);
+
+            const finalCostOfGoods = costAvailable
+                ? costOfGoods
+                : null;
+
+            const grossProfit = costAvailable
+                ? totalSales - costOfGoods
+                : null;
+
+            return {
+                totalSales,
+                totalPaid,
+                totalOutstanding,
+                totalDiscount,
+                transactionCount: sales.length,
+                costOfGoods: finalCostOfGoods,
+                grossProfit,
+                bestSellingProducts,
+                topEarningProducts,
+                topCustomers,
+                paymentMethods,
+                itemCount,
+                detailsLoaded
+            };
+        }
+
+        /*
+         * PDF GENERATION
+         */
+
+        function createSalesPdf(report, sales, analysis, profile) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                throw new Error(
+                    "The PDF library could not load. Please check your internet connection."
+                );
+            }
+
+            const { jsPDF } = window.jspdf;
+
+            const doc = new jsPDF({
+                orientation: "landscape",
+                unit: "mm",
+                format: "a4"
+            });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 12;
+            const contentWidth = pageWidth - margin * 2;
+
+            let y = 12;
+            let summaryMode = false;
+
+            const summaryPages = new Set();
+
+            const businessName = String(
+                profile?.business_name || "Business profile not configured"
+            ).trim();
+
+            const businessType = String(
+                profile?.business_type || ""
+            ).trim();
+
+            const businessPhone = String(
+                profile?.phone || ""
+            ).trim();
+
+            const businessEmail = String(
+                profile?.email || ""
+            ).trim();
+
+            const businessCountry = String(
+                profile?.country || ""
+            ).trim();
+
+            const businessCurrency = getCurrencyLabel(profile);
+
+            function drawHeader(title, subtitle) {
+                doc.setFillColor(13, 29, 48);
+                doc.roundedRect(
+                    margin,
+                    y,
+                    contentWidth,
+                    23,
+                    2,
+                    2,
+                    "F"
+                );
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(15);
+                doc.setTextColor(34, 197, 232);
+                doc.text("WIN BUSINESS SUITE", margin + 6, y + 9);
+
+                doc.setFontSize(10);
+                doc.setTextColor(255, 255, 255);
+                doc.text(title.toUpperCase(), margin + 6, y + 17);
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(220, 230, 240);
+
+                const subtitleLines = doc.splitTextToSize(
+                    String(subtitle || ""),
+                    85
+                );
+
+                doc.text(
+                    subtitleLines,
+                    pageWidth - margin - 6,
+                    y + 10,
+                    { align: "right" }
+                );
+
+                y += 31;
+            }
+
+            function drawBusinessProfile() {
+                const details = [
+                    businessType ? `Type: ${businessType}` : "",
+                    businessPhone ? `Phone: ${businessPhone}` : "",
+                    businessEmail ? `Email: ${businessEmail}` : "",
+                    businessCountry ? `Country: ${businessCountry}` : "",
+                    `Currency: ${businessCurrency}`
+                ].filter(Boolean);
+
+                const profileText = details.join("  |  ");
+
+                const nameLines = doc.splitTextToSize(
+                    businessName,
+                    100
+                );
+
+                const profileLines = doc.splitTextToSize(
+                    profileText,
+                    contentWidth - 8
+                );
+
+                const profileHeight = Math.max(
+                    18,
+                    5 + nameLines.length * 4 + profileLines.length * 3.5
+                );
+
+                doc.setFillColor(241, 246, 250);
+                doc.roundedRect(
+                    margin,
+                    y,
+                    contentWidth,
+                    profileHeight,
+                    2,
+                    2,
+                    "F"
+                );
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(25, 48, 70);
+
+                doc.text(
+                    nameLines,
+                    margin + 4,
+                    y + 6
+                );
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7);
+                doc.setTextColor(80, 100, 120);
+
+                doc.text(
+                    profileLines,
+                    margin + 4,
+                    y + 10 + nameLines.length * 4
+                );
+
+                y += profileHeight + 5;
+            }
+
+            function addSummaryPage() {
+                doc.addPage();
+                y = 12;
+
+                const pageNumber = doc.internal.getNumberOfPages();
+
+                summaryPages.add(pageNumber);
+
+                drawHeader(
+                    "Final Sales Performance Summary",
+                    report.label
+                );
+            }
+
+            function addSectionTitle(title) {
+                if (y > pageHeight - 25) {
+                    if (summaryMode) {
+                        addSummaryPage();
+                    } else {
+                        doc.addPage();
+                        y = 12;
+                        drawHeader("Sales Report", report.label);
+                    }
+                }
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10);
+                doc.setTextColor(25, 48, 70);
+                doc.text(title, margin, y);
+
+                y += 7;
+            }
+
+            function addTableHeader(columns) {
+                doc.setFillColor(230, 238, 245);
+                doc.rect(margin, y, contentWidth, 9, "F");
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(7);
+                doc.setTextColor(45, 65, 85);
+
+                columns.forEach(column => {
+                    doc.text(
+                        column.label,
+                        column.x,
+                        y + 6,
+                        column.align ? { align: column.align } : {}
+                    );
+                });
+
+                y += 12;
+            }
+
+            function addFooter() {
+                const pageCount = doc.internal.getNumberOfPages();
+
+                for (let page = 1; page <= pageCount; page++) {
+                    doc.setPage(page);
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(7);
+                    doc.setTextColor(75, 90, 110);
+
+                    doc.text(
+                        "WIN BUSINESS SUITE",
+                        margin,
+                        pageHeight - 7
+                    );
+
+                    if (summaryPages.has(page)) {
+                        doc.setFontSize(7);
+                        doc.setTextColor(75, 90, 110);
+
+                        doc.text(
+                            "FINAL SALES PERFORMANCE SUMMARY",
+                            pageWidth / 2,
+                            pageHeight - 7,
+                            { align: "center" }
+                        );
+                    }
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(7);
+                    doc.setTextColor(120, 130, 145);
+
+                    doc.text(
+                        `Page ${page} of ${pageCount}`,
+                        pageWidth - margin,
+                        pageHeight - 7,
+                        { align: "right" }
+                    );
+                }
+            }
+
+            /*
+             * TRANSACTION PAGES
+             */
+
+            drawHeader("Sales Transactions", report.label);
+            drawBusinessProfile();
+
+            const cards = [
+                ["TRANSACTIONS", String(analysis.transactionCount)],
+                ["TOTAL SALES", formatCurrency(analysis.totalSales, profile)],
+                ["AMOUNT RECEIVED", formatCurrency(analysis.totalPaid, profile)],
+                ["OUTSTANDING", formatCurrency(analysis.totalOutstanding, profile)],
+                ["DISCOUNTS", formatCurrency(analysis.totalDiscount, profile)]
+            ];
+
+            const gap = 4;
+            const cardWidth = (contentWidth - gap * 4) / 5;
+
+            cards.forEach((card, index) => {
+                const x = margin + index * (cardWidth + gap);
+
+                doc.setFillColor(241, 246, 250);
+                doc.roundedRect(
+                    x,
+                    y,
+                    cardWidth,
+                    20,
+                    2,
+                    2,
+                    "F"
+                );
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(6.5);
+                doc.setTextColor(95, 110, 130);
+                doc.text(card[0], x + 3, y + 7);
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(20, 45, 70);
+
+                const cardValueLines = doc.splitTextToSize(
+                    card[1],
+                    cardWidth - 6
+                );
+
+                doc.text(
+                    cardValueLines.slice(0, 2),
+                    x + 3,
+                    y + 15
+                );
+            });
+
+            y += 28;
+
+            const columns = [
+                { label: "SALE NUMBER", x: margin + 2 },
+                { label: "DATE", x: margin + 53 },
+                { label: "CUSTOMER", x: margin + 100 },
+                { label: "TOTAL", x: margin + 179, align: "right" },
+                { label: "PAID", x: margin + 218, align: "right" },
+                { label: "BALANCE", x: margin + 258, align: "right" },
+                {
+                    label: "STATUS",
+                    x: pageWidth - margin - 2,
+                    align: "right"
+                }
+            ];
+
+            addTableHeader(columns);
+
+            if (sales.length === 0) {
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(100, 110, 125);
+
+                doc.text(
+                    "No sales were recorded for this period.",
+                    margin,
+                    y + 8
+                );
+
+                y += 17;
+            } else {
+                sales.forEach(sale => {
+                    const saleNumber = String(
+                        sale.sale_number || `Sale #${sale.id}`
+                    );
+
+                    const customer = String(
+                        sale.customer_name || "Walk-in customer"
+                    );
+
+                    const date = formatDate(sale.sale_date);
+
+                    const saleLines = doc.splitTextToSize(
+                        saleNumber,
+                        45
+                    );
+
+                    const customerLines = doc.splitTextToSize(
+                        customer,
+                        70
+                    );
+
+                    const rowLines = Math.max(
+                        saleLines.length,
+                        customerLines.length
+                    );
+
+                    const rowHeight = Math.max(
+                        8,
+                        rowLines * 4 + 2
+                    );
+
+                    if (y + rowHeight > pageHeight - 15) {
+                        doc.addPage();
+                        y = 12;
+
+                        drawHeader(
+                            "Sales Transactions",
+                            report.label
+                        );
+
+                        addTableHeader(columns);
+                    }
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(7);
+                    doc.setTextColor(35, 50, 70);
+
+                    doc.text(saleLines, margin + 2, y);
+                    doc.text(date.slice(0, 20), margin + 53, y);
+                    doc.text(customerLines, margin + 100, y);
+
+                    doc.text(
+                        money(sale.total_amount),
+                        margin + 179,
+                        y,
+                        { align: "right" }
+                    );
+
+                    doc.text(
+                        money(sale.amount_paid),
+                        margin + 218,
+                        y,
+                        { align: "right" }
+                    );
+
+                    doc.text(
+                        money(sale.balance_due),
+                        margin + 258,
+                        y,
+                        { align: "right" }
+                    );
+
+                    doc.text(
+                        statusLabel(getStatus(sale)),
+                        pageWidth - margin - 2,
+                        y,
+                        { align: "right" }
+                    );
+
+                    y += rowHeight;
+
+                    doc.setDrawColor(225, 232, 238);
+                    doc.line(
+                        margin,
+                        y - 2,
+                        pageWidth - margin,
+                        y - 2
+                    );
+                });
+            }
+
+            /*
+             * FINAL SALES PERFORMANCE SUMMARY
+             */
+
+            summaryMode = true;
+            addSummaryPage();
+
+            addSectionTitle("BUSINESS PROFILE");
+
+            const profileRows = [
+                ["Business name", businessName],
+                ["Business type", businessType || "Not provided"],
+                ["Phone", businessPhone || "Not provided"],
+                ["Email", businessEmail || "Not provided"],
+                ["Country", businessCountry || "Not provided"],
+                ["Currency", businessCurrency]
+            ];
+
+            profileRows.forEach((row, index) => {
+                if (index % 2 === 0) {
+                    doc.setFillColor(246, 249, 252);
+                    doc.rect(
+                        margin,
+                        y - 4,
+                        contentWidth,
+                        8,
+                        "F"
+                    );
+                }
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(45, 60, 80);
+                doc.text(row[0], margin + 3, y + 1);
+
+                doc.setFont("helvetica", "bold");
+
+                const valueLines = doc.splitTextToSize(
+                    row[1],
+                    150
+                );
+
+                doc.text(
+                    valueLines,
+                    pageWidth - margin - 3,
+                    y + 1,
+                    { align: "right" }
+                );
+
+                y += Math.max(8, valueLines.length * 4);
+            });
+
+            y += 5;
+
+            addSectionTitle("FINANCIAL SUMMARY");
+
+            const financialRows = [
+                [
+                    "Total sales",
+                    formatCurrency(analysis.totalSales, profile)
+                ],
+                [
+                    "Amount received",
+                    formatCurrency(analysis.totalPaid, profile)
+                ],
+                [
+                    "Outstanding balances",
+                    formatCurrency(analysis.totalOutstanding, profile)
+                ],
+                [
+                    "Cost of goods sold",
+                    analysis.costOfGoods === null
+                        ? "Unavailable from sale item records"
+                        : formatCurrency(analysis.costOfGoods, profile)
+                ],
+                [
+                    "Gross profit",
+                    analysis.grossProfit === null
+                        ? "Unavailable - product cost data missing"
+                        : formatCurrency(analysis.grossProfit, profile)
+                ],
+                [
+                    "Total discounts",
+                    formatCurrency(analysis.totalDiscount, profile)
+                ],
+                [
+                    "Number of transactions",
+                    String(analysis.transactionCount)
+                ]
+            ];
+
+            financialRows.forEach((row, index) => {
+                if (index % 2 === 0) {
+                    doc.setFillColor(246, 249, 252);
+                    doc.rect(
+                        margin,
+                        y - 4,
+                        contentWidth,
+                        8,
+                        "F"
+                    );
+                }
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(45, 60, 80);
+                doc.text(row[0], margin + 3, y + 1);
+
+                doc.setFont("helvetica", "bold");
+
+                const valueLines = doc.splitTextToSize(
+                    row[1],
+                    150
+                );
+
+                doc.text(
+                    valueLines,
+                    pageWidth - margin - 3,
+                    y + 1,
+                    { align: "right" }
+                );
+
+                y += Math.max(8, valueLines.length * 4);
+            });
+
+            y += 5;
+
+            function drawRankedList(
+                title,
+                items,
+                getPrimary,
+                getSecondary
+            ) {
+                addSectionTitle(title);
+
+                if (!items.length) {
+                    if (y > pageHeight - 18) {
+                        addSummaryPage();
+                    }
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    doc.setTextColor(110, 120, 135);
+
+                    doc.text(
+                        "No data available for this period.",
+                        margin + 2,
+                        y
+                    );
+
+                    y += 8;
+                    return;
+                }
+
+                items.forEach((item, index) => {
+                    const primaryText =
+                        `${index + 1}. ${getPrimary(item)}`;
+
+                    const primaryLines = doc.splitTextToSize(
+                        primaryText,
+                        contentWidth - 75
+                    );
+
+                    const secondaryText = String(
+                        getSecondary(item)
+                    );
+
+                    const secondaryLines = doc.splitTextToSize(
+                        secondaryText,
+                        65
+                    );
+
+                    const rowHeight = Math.max(
+                        7,
+                        primaryLines.length * 4,
+                        secondaryLines.length * 4
+                    );
+
+                    if (y + rowHeight > pageHeight - 15) {
+                        addSummaryPage();
+                    }
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    doc.setTextColor(45, 60, 80);
+
+                    doc.text(
+                        primaryLines,
+                        margin + 3,
+                        y
+                    );
+
+                    doc.setFont("helvetica", "bold");
+
+                    doc.text(
+                        secondaryLines,
+                        pageWidth - margin - 3,
+                        y,
+                        { align: "right" }
+                    );
+
+                    y += rowHeight;
+                });
+
+                y += 4;
+            }
+
+            drawRankedList(
+                "BEST-SELLING PRODUCTS - BY QUANTITY",
+                analysis.bestSellingProducts,
+                item => item.name,
+                item => `${money(item.quantity)} units`
+            );
+
+            drawRankedList(
+                "TOP-EARNING PRODUCTS - BY SALES VALUE",
+                analysis.topEarningProducts,
+                item => item.name,
+                item => formatCurrency(item.revenue, profile)
+            );
+
+            drawRankedList(
+                "TOP CUSTOMERS - BY PURCHASE VALUE",
+                analysis.topCustomers,
+                item => item.name,
+                item => formatCurrency(item.sales, profile)
+            );
+
+            drawRankedList(
+                "PAYMENT METHOD BREAKDOWN",
+                analysis.paymentMethods,
+                item => item.method.toUpperCase(),
+                item => formatCurrency(item.amount, profile)
+            );
+
+            if (analysis.detailsLoaded < sales.length) {
+                if (y > pageHeight - 25) {
+                    addSummaryPage();
+                }
+
+                y += 3;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7);
+                doc.setTextColor(125, 100, 65);
+
+                const note = doc.splitTextToSize(
+                    "Note: Some individual sale details could not be retrieved. Product rankings and payment breakdowns may be incomplete. Amount received for those sales uses the stored sale payment total.",
+                    contentWidth
+                );
+
+                doc.text(note, margin, y);
+                y += note.length * 4;
+            }
+
+            if (analysis.grossProfit === null) {
+                if (y > pageHeight - 20) {
+                    addSummaryPage();
+                }
+
+                y += 5;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7);
+                doc.setTextColor(125, 100, 65);
+
+                const note = doc.splitTextToSize(
+                    "Gross profit is not displayed because the report could not confirm the buying cost for every sold product. This avoids showing an inaccurate profit figure.",
+                    contentWidth
+                );
+
+                doc.text(note, margin, y);
+            }
+
+            addFooter();
+
+            doc.save(`${report.fileName}.pdf`);
+        }
+
+        async function downloadSalesReport() {
+            const originalText = downloadReportButton.textContent;
+
+            downloadReportButton.disabled = true;
+            downloadReportButton.textContent = "Preparing report...";
+
+            try {
+                const report = getReportRange();
+
+                const [sales, profile] = await Promise.all([
+                    fetchSalesPages(
+                        report.startDate,
+                        report.endDate
+                    ),
+                    fetchBusinessProfile()
+                ]);
+
+                const analysis = await buildReportAnalysis(sales);
+
+                createSalesPdf(
+                    report,
+                    sales,
+                    analysis,
+                    profile
+                );
+
+            } catch (error) {
+                alert(
+                    error.message || "Unable to create the sales report."
+                );
+            } finally {
+                downloadReportButton.disabled = false;
+                downloadReportButton.textContent = originalText;
+            }
+        }
+
+        searchInput.addEventListener("input", () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(applyFilters, 200);
+        });
+
+        fromDate.addEventListener("change", applyFilters);
+        toDate.addEventListener("change", applyFilters);
+        statusFilter.addEventListener("change", applyFilters);
+
+        reportPeriod.addEventListener("change", setPeriodInput);
+
+        previousButton.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderSales();
+            }
+        });
+
+        nextButton.addEventListener("click", () => {
+            const totalPages = Math.ceil(
+                filteredSales.length / PAGE_SIZE
+            );
+
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderSales();
+            }
+        });
+
+        downloadReportButton.addEventListener(
+            "click",
+            downloadSalesReport
+        );
+
+        loadSales();
+    </script>
+</body>
+</html>
