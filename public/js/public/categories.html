@@ -1,0 +1,542 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories | WIN Business Suite</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+    <link rel="stylesheet" href="/css/dashboard-command.css">
+
+    <style>
+        .categories-content {
+            padding: 28px;
+        }
+
+        .categories-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 26px;
+        }
+
+        .categories-heading h1 {
+            margin: 5px 0;
+        }
+
+        .categories-heading p {
+            color: #718096;
+        }
+
+        .category-action-button {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            background: #087cf0;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .category-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+
+        .category-stat {
+            padding: 20px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid #dce5ef;
+        }
+
+        .category-stat span {
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .category-stat h2 {
+            margin: 9px 0 0;
+        }
+
+        .category-toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .category-toolbar input,
+        .category-toolbar select {
+            padding: 12px;
+            border: 1px solid #dce5ef;
+            border-radius: 9px;
+            min-width: 180px;
+            background: white;
+        }
+
+        .category-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .category-card {
+            background: white;
+            border: 1px solid #dce5ef;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .category-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            background: #eef6ff;
+            border-radius: 12px;
+            font-size: 22px;
+        }
+
+        .category-type {
+            font-size: 11px;
+            padding: 5px 9px;
+            border-radius: 20px;
+            background: #eaf5ff;
+            color: #087cf0;
+            font-weight: 700;
+        }
+
+        .category-card h3 {
+            margin: 16px 0 7px;
+        }
+
+        .category-description {
+            color: #718096;
+            font-size: 13px;
+            min-height: 36px;
+        }
+
+        .category-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 16px;
+            padding-top: 13px;
+            border-top: 1px solid #edf1f5;
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .category-children {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .subcategory-tag {
+            background: #f0f5fa;
+            color: #334155;
+            padding: 6px 9px;
+            border-radius: 7px;
+            font-size: 12px;
+        }
+
+        .category-card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .category-card-actions button {
+            border: 1px solid #dce5ef;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .category-card-actions .delete-category {
+            color: #dc3545;
+        }
+
+        .category-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 45px 20px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+            color: #718096;
+        }
+
+        .category-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, .6);
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .category-modal.show {
+            display: flex;
+        }
+
+        .category-modal-content {
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            color: #172b45;
+            border-radius: 16px;
+            padding: 25px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .category-modal-content h2 {
+            margin-top: 0;
+        }
+
+        .category-form-group {
+            margin-top: 16px;
+        }
+
+        .category-form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .category-form-group input,
+        .category-form-group textarea,
+        .category-form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dce5ef;
+            border-radius: 9px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+
+        .category-form-group textarea {
+            resize: vertical;
+            min-height: 75px;
+        }
+
+        .category-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .category-modal-actions button {
+            padding: 11px 16px;
+            border-radius: 9px;
+            border: 1px solid #dce5ef;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .category-save-button {
+            background: #087cf0;
+            color: white;
+            border-color: #087cf0 !important;
+        }
+
+        #categoryMessage {
+            margin-top: 14px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 650px) {
+            .categories-content {
+                padding: 16px;
+            }
+
+            .category-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .categories-heading {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body class="win-dashboard">
+
+<div class="dashboard-layout">
+
+    <aside class="dashboard-sidebar">
+
+        <a href="/dashboard.html" class="sidebar-brand">
+            <span class="brand-icon">W</span>
+            <span>
+                <strong>WIN</strong>
+                <small>BUSINESS SUITE</small>
+            </span>
+        </a>
+
+        <div class="sidebar-section">
+            <p class="sidebar-label">MAIN MENU</p>
+
+            <a href="/dashboard.html" class="sidebar-link">
+                <span>⌂</span> Overview
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>▤</span> Sales & POS
+            </a>
+
+            <a href="/inventory.html" class="sidebar-link">
+                <span>▦</span> Inventory
+            </a>
+
+            <a href="/categories.html" class="sidebar-link active">
+                <span>▣</span> Categories
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>🛒</span> Purchases
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>▥</span> Finance
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>♙</span> Customers
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>♧</span> Employees
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>▧</span> Reports
+            </a>
+
+            <a href="#" class="sidebar-link">
+                <span>✦</span> WIN AI
+            </a>
+        </div>
+
+        <div class="sidebar-section sidebar-bottom">
+            <p class="sidebar-label">PREFERENCES</p>
+
+            <a href="/business-settings.html" class="sidebar-link">
+                <span>⚙</span> Business Settings
+            </a>
+
+            <button id="themeToggle" class="sidebar-link theme-toggle">
+                <span>◐</span> Light / Dark Mode
+            </button>
+
+            <button id="logoutButton" class="sidebar-link logout-link">
+                <span>⇥</span> Log Out
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <strong>WIN Business Suite</strong>
+            <small>Manage Everything. Grow Smarter.</small>
+        </div>
+
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-topbar">
+            <div>
+                <p class="topbar-label">BUSINESS MANAGEMENT</p>
+                <h2>Categories</h2>
+            </div>
+
+            <div class="topbar-user">
+                <div class="user-avatar">W</div>
+                <div>
+                    <strong id="userName">Loading...</strong>
+                    <small id="businessName">Your Business</small>
+                </div>
+            </div>
+        </header>
+
+        <section class="categories-content">
+
+            <div class="categories-heading">
+                <div>
+                    <p class="eyebrow">PRODUCT ORGANISATION</p>
+                    <h1>Manage Categories</h1>
+                    <p>Organise your products into categories and subcategories.</p>
+                </div>
+
+                <button class="category-action-button" id="addCategoryButton">
+                    + Add Category
+                </button>
+            </div>
+
+            <div class="category-stats">
+
+                <div class="category-stat">
+                    <span>Total Categories</span>
+                    <h2 id="totalCategories">--</h2>
+                </div>
+
+                <div class="category-stat">
+                    <span>WIN Standard Categories</span>
+                    <h2 id="standardCategories">--</h2>
+                </div>
+
+                <div class="category-stat">
+                    <span>Custom Categories</span>
+                    <h2 id="customCategories">--</h2>
+                </div>
+
+            </div>
+
+            <div class="category-toolbar">
+
+                <input
+                    type="search"
+                    id="categorySearch"
+                    placeholder="Search categories..."
+                >
+
+                <select id="categoryFilter">
+                    <option value="all">All Categories</option>
+                    <option value="standard">WIN Standard</option>
+                    <option value="custom">Custom Categories</option>
+                </select>
+
+            </div>
+
+            <div class="category-list" id="categoryList">
+
+                <div class="category-empty">
+                    Loading your categories...
+                </div>
+
+            </div>
+
+        </section>
+
+        <footer class="dashboard-footer">
+            <p>WIN Business Suite © 2026</p>
+            <p>Manage Everything. Grow Smarter.</p>
+        </footer>
+
+    </main>
+
+</div>
+
+<!-- Add/Edit Category Modal -->
+<div class="category-modal" id="categoryModal">
+
+    <div class="category-modal-content">
+
+        <h2 id="categoryModalTitle">Add Category</h2>
+
+        <form id="categoryForm">
+
+            <input type="hidden" id="categoryId">
+
+            <div class="category-form-group">
+                <label for="categoryName">Category Name *</label>
+                <input
+                    type="text"
+                    id="categoryName"
+                    maxlength="80"
+                    placeholder="e.g. Electronics"
+                    required
+                >
+            </div>
+
+            <div class="category-form-group">
+                <label for="categoryDescription">Description</label>
+                <textarea
+                    id="categoryDescription"
+                    placeholder="Describe this category..."
+                ></textarea>
+            </div>
+
+            <div class="category-form-group">
+                <label for="categoryIcon">Icon</label>
+                <input
+                    type="text"
+                    id="categoryIcon"
+                    maxlength="10"
+                    placeholder="e.g. 📦"
+                >
+            </div>
+
+            <div class="category-form-group">
+                <label for="parentCategory">Parent Category</label>
+                <select id="parentCategory">
+                    <option value="">Main Category (No Parent)</option>
+                </select>
+            </div>
+
+            <p id="categoryMessage"></p>
+
+            <div class="category-modal-actions">
+
+                <button type="button" id="cancelCategoryButton">
+                    Cancel
+                </button>
+
+                <button type="submit" class="category-save-button" id="saveCategoryButton">
+                    Save Category
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script src="/js/dashboard.js"></script>
+
+<script>
+    const themeToggle = document.getElementById("themeToggle");
+
+    themeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("light-mode");
+
+        const mode = document.body.classList.contains("light-mode")
+            ? "light"
+            : "dark";
+
+        localStorage.setItem("winTheme", mode);
+    });
+
+    if (localStorage.getItem("winTheme") === "light") {
+        document.body.classList.add("light-mode");
+    }
+</script>
+
+<script src="/js/categories.js"></script>
+
+</body>
+</html>

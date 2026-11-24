@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Upgrade your business to WIN Pro and manage your operations smarter.">
+    <title>Upgrade to WIN Pro | WIN Business Suite</title>
+    <link rel="stylesheet" href="/css/app-pages.css">
+
+    <style>
+        .upgrade-container {
+            width: 90%;
+            max-width: 1050px;
+            margin: 45px auto;
+        }
+
+        .upgrade-heading {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upgrade-heading .eyebrow {
+            color: var(--win-blue);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .upgrade-heading h1 {
+            color: var(--win-navy);
+            font-size: 34px;
+            margin: 12px 0;
+        }
+
+        .upgrade-heading p {
+            color: var(--win-muted);
+            line-height: 1.6;
+        }
+
+        .upgrade-card {
+            max-width: 720px;
+            margin: auto;
+            padding: 35px;
+            border-radius: 20px;
+            color: white;
+            background: linear-gradient(130deg, #07182e, #07569e);
+            box-shadow: 0 15px 40px rgba(7, 24, 46, 0.13);
+        }
+
+        .upgrade-card h2 {
+            margin-top: 0;
+            color: var(--win-cyan);
+        }
+
+        .upgrade-description {
+            color: #d5e7f8;
+            line-height: 1.6;
+        }
+
+        .plan-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-top: 28px;
+        }
+
+        .plan-option {
+            padding: 22px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .plan-option.selected {
+            border-color: var(--win-cyan);
+            background: rgba(22, 200, 232, 0.12);
+        }
+
+        .plan-option input {
+            accent-color: var(--win-cyan);
+        }
+
+        .plan-option label {
+            display: block;
+            cursor: pointer;
+        }
+
+        .plan-option h3 {
+            margin: 12px 0 7px;
+            color: white;
+        }
+
+        .plan-price {
+            color: var(--win-cyan);
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .plan-option p {
+            margin-bottom: 0;
+            color: #c5d9ed;
+            font-size: 13px;
+        }
+
+        .upgrade-benefits {
+            margin-top: 30px;
+            padding: 22px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .upgrade-benefits h3 {
+            margin-top: 0;
+        }
+
+        .upgrade-benefits ul {
+            padding-left: 20px;
+            color: #d5e7f8;
+            line-height: 2;
+        }
+
+        .upgrade-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-top: 28px;
+            padding-top: 22px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .upgrade-total span {
+            color: #c5d9ed;
+        }
+
+        .upgrade-total strong {
+            color: var(--win-cyan);
+            font-size: 27px;
+        }
+
+        .upgrade-action {
+            width: 100%;
+            margin-top: 25px;
+        }
+
+        .upgrade-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .payment-note {
+            margin-top: 18px;
+            color: #c5d9ed;
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .upgrade-message {
+            min-height: 20px;
+            margin-top: 15px;
+            color: var(--win-cyan);
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .upgrade-message.error {
+            color: #ffb4b4;
+        }
+
+        .upgrade-back {
+            display: block;
+            width: fit-content;
+            margin: 25px auto;
+            color: var(--win-blue);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .upgrade-container {
+                width: 92%;
+                margin: 25px auto;
+            }
+
+            .upgrade-heading h1 {
+                font-size: 27px;
+            }
+
+            .upgrade-card {
+                padding: 23px 18px;
+            }
+
+            .plan-options {
+                grid-template-columns: 1fr;
+            }
+
+            .upgrade-total {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+        <div class="nav-actions">
+            <a href="/dashboard.html" style="color:white;text-decoration:none;">Dashboard</a>
+        </div>
+    </nav>
+
+    <main class="upgrade-container">
+
+        <header class="upgrade-heading">
+            <p class="eyebrow">GROW YOUR BUSINESS</p>
+            <h1>Upgrade to WIN Pro</h1>
+            <p>Choose the subscription that works best for your business.</p>
+        </header>
+
+        <section class="upgrade-card">
+
+            <h2>WIN Pro</h2>
+
+            <p class="upgrade-description">
+                Unlock your business management tools with a WIN Pro subscription.
+                Choose monthly or annual billing below.
+            </p>
+
+            <div class="plan-options">
+
+                <div class="plan-option selected" id="monthlyOption">
+                    <label>
+                        <input
+                            type="radio"
+                            name="billingCycle"
+                            value="monthly"
+                            checked
+                        >
+                        <h3>Monthly Plan</h3>
+                        <div class="plan-price">KSh 2,000</div>
+                        <p>30-day subscription period</p>
+                    </label>
+                </div>
+
+                <div class="plan-option" id="annualOption">
+                    <label>
+                        <input
+                            type="radio"
+                            name="billingCycle"
+                            value="annual"
+                        >
+                        <h3>Annual Plan</h3>
+                        <div class="plan-price">KSh 20,000</div>
+                        <p>12-month subscription period</p>
+                    </label>
+                </div>
+
+            </div>
+
+            <div class="upgrade-benefits">
+                <h3>Included with WIN Pro</h3>
+                <ul>
+                    <li>Business dashboard</li>
+                    <li>Sales and POS tools</li>
+                    <li>Inventory management</li>
+                    <li>Purchases and supplier management</li>
+                    <li>Business finance tracking</li>
+                    <li>Customer management</li>
+                    <li>Reports and business insights</li>
+                    <li>WIN AI business assistant</li>
+                </ul>
+            </div>
+
+            <div class="upgrade-total">
+                <span>Selected subscription price</span>
+                <strong id="selectedPrice">KSh 2,000</strong>
+            </div>
+
+            <button
+                type="button"
+                class="btn-primary upgrade-action"
+                id="upgradeButton"
+            >
+                Request WIN Pro Upgrade
+            </button>
+
+            <p class="payment-note">
+                Payment requests are handled manually.
+                M-Pesa PINs and OTPs are never required.
+                Your subscription is activated only after payment verification.
+            </p>
+
+            <p class="upgrade-message" id="upgradeMessage" aria-live="polite"></p>
+
+        </section>
+
+        <a href="/dashboard.html" class="upgrade-back">
+            ← Back to Dashboard
+        </a>
+
+    </main>
+
+    <script>
+        const monthlyOption = document.getElementById("monthlyOption");
+        const annualOption = document.getElementById("annualOption");
+        const selectedPrice = document.getElementById("selectedPrice");
+        const upgradeButton = document.getElementById("upgradeButton");
+        const upgradeMessage = document.getElementById("upgradeMessage");
+
+        let selectedCycle = "monthly";
+
+        function updateSelectedPlan() {
+            const selected = document.querySelector(
+                'input[name="billingCycle"]:checked'
+            );
+
+            if (!selected) return;
+
+            selectedCycle = selected.value;
+
+            monthlyOption.classList.toggle(
+                "selected",
+                selectedCycle === "monthly"
+            );
+
+            annualOption.classList.toggle(
+                "selected",
+                selectedCycle === "annual"
+            );
+
+            selectedPrice.textContent =
+                selectedCycle === "monthly"
+                    ? "KSh 2,000"
+                    : "KSh 20,000";
+
+            upgradeMessage.textContent = "";
+            upgradeMessage.classList.remove("error");
+        }
+
+        document.querySelectorAll(
+            'input[name="billingCycle"]'
+        ).forEach(input => {
+            input.addEventListener("change", updateSelectedPlan);
+        });
+
+        upgradeButton.addEventListener("click", async () => {
+            upgradeButton.disabled = true;
+            upgradeButton.textContent = "Submitting request...";
+
+            upgradeMessage.textContent = "";
+            upgradeMessage.classList.remove("error");
+
+            try {
+                const response = await fetch("/api/subscription/request", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        billing_cycle: selectedCycle
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    window.location.href = "/login.html";
+                    return;
+                }
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.message || "Could not submit your upgrade request."
+                    );
+                }
+
+                upgradeMessage.textContent =
+                    "Your WIN Pro upgrade request has been saved successfully. " +
+                    "Request ID: #" + data.request.id +
+                    ". Status: PENDING. Payment verification is still required.";
+
+                upgradeButton.textContent = "Request Submitted";
+
+            } catch (error) {
+                upgradeMessage.textContent =
+                    error.message || "Something went wrong. Please try again.";
+
+                upgradeMessage.classList.add("error");
+
+                upgradeButton.disabled = false;
+                upgradeButton.textContent = "Request WIN Pro Upgrade";
+            }
+        });
+    </script>
+
+</body>
+</html>

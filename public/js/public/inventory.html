@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory | WIN Business Suite</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+
+    <style>
+        .inventory-container {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+
+        .inventory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .inventory-header h1 {
+            margin-bottom: 8px;
+        }
+
+        .inventory-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .inventory-stat,
+        .inventory-panel {
+            background: white;
+            border: 1px solid #e5eaf0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .inventory-stat h3 {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .inventory-stat strong {
+            font-size: 27px;
+            color: #0f172a;
+        }
+
+        .inventory-panel {
+            margin-bottom: 25px;
+        }
+
+        .inventory-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .inventory-form label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .inventory-form input,
+        .inventory-form textarea,
+        .inventory-form select,
+        .inventory-search {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font: inherit;
+            background: white;
+        }
+
+        .inventory-form textarea {
+            min-height: 75px;
+            resize: vertical;
+        }
+
+        .form-full {
+            grid-column: 1 / -1;
+        }
+
+        .inventory-table-wrap {
+            overflow-x: auto;
+        }
+
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .inventory-table th,
+        .inventory-table td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #e5eaf0;
+        }
+
+        .inventory-table th {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .category-group-row td {
+            background: #eaf3ff;
+            color: #164e8a;
+            font-weight: 700;
+            padding: 12px 13px;
+        }
+
+        .stock-low {
+            color: #b45309;
+            font-weight: 700;
+        }
+
+        .stock-ok {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .inventory-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .inventory-actions button {
+            padding: 7px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .edit-button {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .delete-button {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .inventory-message {
+            margin-top: 12px;
+            font-weight: 600;
+        }
+
+        .inventory-empty {
+            text-align: center;
+            color: #64748b;
+            padding: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .inventory-form {
+                grid-template-columns: 1fr;
+            }
+
+            .form-full {
+                grid-column: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+    <div class="nav-actions">
+        <span id="userName">Loading...</span>
+        <button id="logoutButton" class="btn-secondary">Log Out</button>
+    </div>
+</header>
+
+<main class="inventory-container">
+
+    <div class="inventory-header">
+        <div>
+            <p class="eyebrow">BUSINESS MANAGEMENT</p>
+            <h1>Inventory Management</h1>
+            <p>Manage products, prices and stock levels.</p>
+            <h3 id="businessName">Loading business...</h3>
+        </div>
+
+        <a href="/dashboard.html" class="btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <section class="inventory-stats">
+        <div class="inventory-stat">
+            <h3>Total Products</h3>
+            <strong id="totalProducts">0</strong>
+        </div>
+
+        <div class="inventory-stat">
+            <h3>Total Stock Units</h3>
+            <strong id="totalStock">0</strong>
+        </div>
+
+        <div class="inventory-stat">
+            <h3>Low Stock Products</h3>
+            <strong id="lowStockProducts">0</strong>
+        </div>
+    </section>
+
+    <section class="inventory-panel">
+        <h2 id="formTitle">Add New Product</h2>
+        <p>Enter your product information below.</p>
+
+        <form id="productForm" class="inventory-form">
+
+            <div class="form-full">
+                <label for="product_name">Product Name *</label>
+                <input type="text" id="product_name" maxlength="150"
+                       placeholder="Enter product name" required>
+            </div>
+
+            <div class="form-full">
+                <label for="category_id">Product Category</label>
+                <select id="category_id">
+                    <option value="">Loading categories...</option>
+                </select>
+            </div>
+
+            <div class="form-full">
+                <label for="description">Description</label>
+                <textarea id="description"
+                          placeholder="Optional product description"></textarea>
+            </div>
+
+            <div>
+                <label for="selling_price">Selling Price (KES) *</label>
+                <input type="number" id="selling_price"
+                       min="0" step="0.01" required>
+            </div>
+
+            <div>
+                <label for="buying_price">Buying Price (KES)</label>
+                <input type="number" id="buying_price"
+                       min="0" step="0.01" value="0">
+            </div>
+
+            <div>
+                <label for="stock_quantity">Stock Quantity *</label>
+                <input type="number" id="stock_quantity"
+                       min="0" step="0.01" value="0" required>
+            </div>
+
+            <div>
+                <label for="low_stock_level">Low Stock Alert Level</label>
+                <input type="number" id="low_stock_level"
+                       min="0" step="0.01" value="5">
+            </div>
+
+            <div class="form-full">
+                <button type="submit" id="saveProductButton"
+                        class="btn-primary">
+                    Add Product
+                </button>
+
+                <button type="button" id="cancelEditButton"
+                        class="btn-secondary" hidden>
+                    Cancel Edit
+                </button>
+
+                <p id="formMessage" class="inventory-message"></p>
+            </div>
+
+        </form>
+    </section>
+
+    <section class="inventory-panel">
+        <h2>Product Inventory</h2>
+        <p>View and manage your products, organised by category.</p>
+
+        <input type="search" id="productSearch"
+               class="inventory-search"
+               placeholder="Search products..."
+               style="margin: 15px 0;">
+
+        <div class="inventory-table-wrap">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Buying Price</th>
+                        <th>Selling Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="productsTableBody">
+                    <tr>
+                        <td colspan="6" class="inventory-empty">
+                            Loading products...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p id="tableMessage" class="inventory-message"></p>
+    </section>
+
+    <footer class="dashboard-footer">
+        <p>WIN Business Suite © 2026</p>
+        <p>Manage Everything. Grow Smarter.</p>
+    </footer>
+
+</main>
+
+<script src="/js/inventory.js"></script>
+
+</body>
+</html>

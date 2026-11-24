@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | WIN Business Suite</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <a href="/" class="logo">WIN BUSINESS SUITE</a>
+    </header>
+
+    <main class="auth-container">
+        <section class="auth-card">
+            <h1>Create Your Account</h1>
+            <p>Start managing your business smarter.</p>
+
+            <form id="registerForm">
+                <label for="business_name">Business Name</label>
+                <input type="text" id="business_name" name="business_name"
+                    placeholder="Enter your business name" required>
+
+                <label for="business_type">Business Type</label>
+                <select id="business_type" name="business_type" required>
+                    <option value="">Select business type</option>
+                    <option value="Retail">Retail / Shop</option>
+                    <option value="Wholesale">Wholesale</option>
+                    <option value="Cyber Cafe">Cyber Cafe</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Salon">Salon / Beauty</option>
+                    <option value="Hotel">Hotel / Accommodation</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Services">Professional Services</option>
+                    <option value="Manufacturing">Manufacturing</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label for="full_name">Your Full Name</label>
+                <input type="text" id="full_name" name="full_name"
+                    placeholder="Enter your full name" required>
+
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email"
+                    placeholder="Enter your email" required>
+
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"
+                    placeholder="At least 12 characters" minlength="12"
+                    maxlength="128" autocomplete="new-password" required>
+
+                <button type="submit" class="btn-primary" id="registerButton">
+                    Create Account
+                </button>
+
+                <p id="registerMessage" role="status" aria-live="polite"></p>
+            </form>
+
+            <p class="auth-switch">
+                Already have an account?
+                <a href="/login.html">Log in</a>
+            </p>
+
+            <a href="/" class="back-link">← Back to Home</a>
+        </section>
+    </main>
+
+    <script src="/js/register.js"></script>
+</body>
+</html>

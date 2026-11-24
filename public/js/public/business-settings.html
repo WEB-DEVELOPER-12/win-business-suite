@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Settings | WIN Business Suite</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        :root {
+            --navy: #0b1730;
+            --cyan: #16c8dc;
+            --muted: #718096;
+            --border: #e5eaf1;
+            --background: #f5f8fc;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--navy);
+            font-family: Arial, sans-serif;
+        }
+
+        .topbar {
+            background: var(--navy);
+            color: white;
+            padding: 18px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .brand { font-size: 21px; font-weight: bold; }
+        .brand span { color: var(--cyan); }
+
+        .topbar a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .page-heading { margin-bottom: 25px; }
+        .page-heading h1 { margin: 0 0 8px; font-size: 28px; }
+
+        .page-heading p {
+            color: var(--muted);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .settings-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .settings-card h2 {
+            font-size: 18px;
+            margin: 0 0 6px;
+        }
+
+        .section-description {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0 0 22px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full { grid-column: 1 / -1; }
+
+        label { font-size: 13px; font-weight: 600; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            background: white;
+        }
+
+        input:focus, select:focus { border-color: var(--cyan); }
+
+        .phone-input {
+            display: flex;
+            align-items: stretch;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .phone-prefix {
+            display: flex;
+            align-items: center;
+            padding: 0 13px;
+            background: #f1f5f9;
+            border-right: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .phone-input input {
+            border: none;
+            border-radius: 0;
+            min-width: 0;
+        }
+
+        .phone-input input:focus { border: none; }
+
+        .field-help, .logo-help {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .logo-preview {
+            width: 85px;
+            height: 85px;
+            border: 1px dashed #b9c7d8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .logo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .save-area {
+            display: flex;
+            justify-content: flex-end;
+            margin: 25px 0 40px;
+        }
+
+        .save-button {
+            background: var(--cyan);
+            color: var(--navy);
+            border: none;
+            border-radius: 8px;
+            padding: 13px 25px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .save-button:hover { opacity: 0.9; }
+        .save-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .message {
+            display: none;
+            padding: 13px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 14px;
+        }
+
+        .message.success {
+            display: block;
+            background: #e6f8ef;
+            color: #147a43;
+        }
+
+        .message.error {
+            display: block;
+            background: #fff0f0;
+            color: #b42318;
+        }
+
+        @media (max-width: 650px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full { grid-column: auto; }
+            .settings-card { padding: 18px; }
+            .page-heading h1 { font-size: 23px; }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">WIN <span>Business Suite</span></div>
+        <a href="dashboard.html">← Back to Dashboard</a>
+    </header>
+
+    <main class="container">
+        <div class="page-heading">
+            <h1>Business Profile & Settings</h1>
+            <p>Manage your business identity, contact information and regional preferences.</p>
+        </div>
+
+        <div id="message" class="message" role="status"></div>
+
+        <form id="businessSettingsForm">
+            <section class="settings-card">
+                <h2>Business Identity</h2>
+                <p class="section-description">Manage the basic identity of your business.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="businessName">Business Name *</label>
+                        <input id="businessName" name="business_name"
+                               type="text" maxlength="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessType">Business Type *</label>
+                        <input id="businessType" name="business_type"
+                               type="text" maxlength="100" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-card">
+                <h2>Contact Information</h2>
+                <p class="section-description">Keep your business contact details up to date.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="businessEmail">Business Email</label>
+                        <input id="businessEmail" name="email"
+                               type="email" maxlength="254">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessPhone">Business Phone</label>
+
+                        <div class="phone-input">
+                            <span class="phone-prefix" id="phonePrefix">+254</span>
+                            <input
+                                id="businessPhone"
+                                name="phone"
+                                type="tel"
+                                inputmode="numeric"
+                                pattern="[0-9]*"
+                                maxlength="15"
+                                autocomplete="tel-national"
+                                placeholder="712345678"
+                                aria-describedby="phoneHelp"
+                            >
+                        </div>
+
+                        <p class="field-help" id="phoneHelp">
+                            Numbers only. Select your country below to update the international calling code.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-card">
+                <h2>Location</h2>
+                <p class="section-description">Set the country where your business operates.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="country">Country</label>
+                        <select id="country" name="country">
+                            <option value="Kenya" data-dial="+254" selected>Kenya</option>
+                            <option value="Somalia" data-dial="+252">Somalia</option>
+                            <option value="Uganda" data-dial="+256">Uganda</option>
+                            <option value="Tanzania" data-dial="+255">Tanzania</option>
+                            <option value="Ethiopia" data-dial="+251">Ethiopia</option>
+                            <option value="South Sudan" data-dial="+211">South Sudan</option>
+                            <option value="Rwanda" data-dial="+250">Rwanda</option>
+                            <option value="Burundi" data-dial="+257">Burundi</option>
+                            <option value="Nigeria" data-dial="+234">Nigeria</option>
+                            <option value="South Africa" data-dial="+27">South Africa</option>
+                            <option value="Ghana" data-dial="+233">Ghana</option>
+                            <option value="Egypt" data-dial="+20">Egypt</option>
+                            <option value="United States" data-dial="+1">United States</option>
+                            <option value="Canada" data-dial="+1">Canada</option>
+                            <option value="United Kingdom" data-dial="+44">United Kingdom</option>
+                            <option value="Ireland" data-dial="+353">Ireland</option>
+                            <option value="Germany" data-dial="+49">Germany</option>
+                            <option value="France" data-dial="+33">France</option>
+                            <option value="Italy" data-dial="+39">Italy</option>
+                            <option value="Spain" data-dial="+34">Spain</option>
+                            <option value="Netherlands" data-dial="+31">Netherlands</option>
+                            <option value="Sweden" data-dial="+46">Sweden</option>
+                            <option value="Switzerland" data-dial="+41">Switzerland</option>
+                            <option value="Turkey" data-dial="+90">Turkey</option>
+                            <option value="Saudi Arabia" data-dial="+966">Saudi Arabia</option>
+                            <option value="United Arab Emirates" data-dial="+971">United Arab Emirates</option>
+                            <option value="Qatar" data-dial="+974">Qatar</option>
+                            <option value="India" data-dial="+91">India</option>
+                            <option value="Pakistan" data-dial="+92">Pakistan</option>
+                            <option value="Bangladesh" data-dial="+880">Bangladesh</option>
+                            <option value="China" data-dial="+86">China</option>
+                            <option value="Japan" data-dial="+81">Japan</option>
+                            <option value="South Korea" data-dial="+82">South Korea</option>
+                            <option value="Singapore" data-dial="+65">Singapore</option>
+                            <option value="Malaysia" data-dial="+60">Malaysia</option>
+                            <option value="Indonesia" data-dial="+62">Indonesia</option>
+                            <option value="Australia" data-dial="+61">Australia</option>
+                            <option value="New Zealand" data-dial="+64">New Zealand</option>
+                            <option value="Brazil" data-dial="+55">Brazil</option>
+                            <option value="Mexico" data-dial="+52">Mexico</option>
+                            <option value="Argentina" data-dial="+54">Argentina</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessAddress">Business Address</label>
+                        <input id="businessAddress" type="text"
+                               placeholder="Coming soon" disabled>
+                    </div>
+                </div>
+
+                <p class="logo-help">A full business address will be added in a future update.</p>
+            </section>
+
+            <section class="settings-card">
+                <h2>Regional Settings</h2>
+                <p class="section-description">Choose the currency used by your business.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="currency">Business Currency</label>
+                        <select id="currency" name="currency">
+                            <option value="KES">KES — Kenyan Shilling</option>
+                            <option value="USD">USD — US Dollar</option>
+                            <option value="UGX">UGX — Ugandan Shilling</option>
+                            <option value="TZS">TZS — Tanzanian Shilling</option>
+                            <option value="EUR">EUR — Euro</option>
+                            <option value="GBP">GBP — British Pound</option>
+                            <option value="NGN">NGN — Nigerian Naira</option>
+                            <option value="ZAR">ZAR — South African Rand</option>
+                            <option value="SOS">SOS — Somali Shilling</option>
+                            <option value="ETB">ETB — Ethiopian Birr</option>
+                            <option value="INR">INR — Indian Rupee</option>
+                            <option value="AED">AED — UAE Dirham</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-card">
+                <h2>Business Logo</h2>
+                <p class="section-description">Your business logo will help identify your business across WIN.</p>
+
+                <div class="logo-area">
+                    <div class="logo-preview" id="logoPreview">No logo</div>
+                    <div>
+                        <p><strong>Logo upload</strong></p>
+                        <p class="logo-help">Logo upload will be enabled in a later update.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="save-area">
+                <button type="submit" class="save-button" id="saveButton">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <script src="js/business-settings.js"></script>
+</body>
+</html>

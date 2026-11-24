@@ -1,0 +1,314 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | WIN Business Suite</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+    <link rel="stylesheet" href="/css/dashboard-command.css">
+</head>
+<body class="win-dashboard">
+
+    <div class="dashboard-layout">
+
+        <aside class="dashboard-sidebar">
+            <a href="/dashboard.html" class="sidebar-brand">
+                <span class="brand-icon">W</span>
+                <span>
+                    <strong>WIN</strong>
+                    <small>BUSINESS SUITE</small>
+                </span>
+            </a>
+
+            <div class="sidebar-section">
+                <p class="sidebar-label">MAIN MENU</p>
+
+                <a href="/dashboard.html" class="sidebar-link active">
+                    <span>⌂</span> Overview
+                </a>
+
+                <a href="#" class="sidebar-link">
+                    <span>▤</span> Sales & POS
+                </a>
+
+                <a href="/inventory.html" class="sidebar-link">
+                    <span>▦</span> Inventory
+                </a>
+
+                <a href="/debtors.html" class="sidebar-link">
+                    <span>📒</span> Debtor Management
+                </a>
+
+                <a href="#" class="sidebar-link">
+                    <span>▥</span> Finance
+                </a>
+
+                <a href="#" class="sidebar-link">
+                    <span>✦</span> WIN AI
+                </a>
+            </div>
+
+            <div class="sidebar-section sidebar-bottom">
+                <p class="sidebar-label">PREFERENCES</p>
+
+                <a href="/business-settings.html" class="sidebar-link">
+                    <span>⚙</span> Business Settings
+                </a>
+
+                <button id="themeToggle" class="sidebar-link theme-toggle">
+                    <span>◐</span> Light / Dark Mode
+                </button>
+
+                <button id="logoutButton" class="sidebar-link logout-link">
+                    <span>⇥</span> Log Out
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <strong>WIN Business Suite</strong>
+                <small>Manage Everything. Grow Smarter.</small>
+            </div>
+        </aside>
+
+        <main class="dashboard-main">
+
+            <header class="dashboard-topbar">
+                <div>
+                    <p class="topbar-label">BUSINESS MANAGEMENT</p>
+                    <h2>Dashboard</h2>
+                </div>
+
+                <div class="topbar-user">
+                    <div class="user-avatar">W</div>
+                    <div>
+                        <strong id="userName">Loading...</strong>
+                        <small id="businessName">Your Business</small>
+                    </div>
+                </div>
+            </header>
+
+            <section class="command-welcome">
+                <div>
+                    <p class="eyebrow">YOUR BUSINESS COMMAND CENTRE</p>
+                    <h1>Welcome back!</h1>
+                    <p>Everything you need to manage your business, in one place.</p>
+                    <h2 id="businessNameWelcome"></h2>
+                </div>
+
+                <div class="welcome-decoration">
+                    <span>WIN</span>
+                    <small>GROW SMARTER</small>
+                </div>
+            </section>
+
+            <section class="command-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">GET THINGS DONE</p>
+                        <h2>Quick Actions</h2>
+                    </div>
+                </div>
+
+                <div class="quick-actions-grid">
+                    <a href="#" class="quick-action">
+                        <span>＋</span>
+                        <strong>Record Sale</strong>
+                    </a>
+
+                    <a href="/inventory.html" class="quick-action">
+                        <span>▦</span>
+                        <strong>Add Product</strong>
+                    </a>
+
+                    <a href="#" class="quick-action">
+                        <span>↗</span>
+                        <strong>Record Expense</strong>
+                    </a>
+                </div>
+            </section>
+
+            <section class="command-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">YOUR BUSINESS AT A GLANCE</p>
+                        <h2>Business Overview</h2>
+                    </div>
+                    <span class="overview-period">Overview</span>
+                </div>
+
+                <div class="overview-grid">
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">↗</span>
+                            <small>SALES</small>
+                        </div>
+                        <h3>--</h3>
+                        <p>Sales overview</p>
+                    </article>
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">↓</span>
+                            <small>EXPENSES</small>
+                        </div>
+                        <h3>--</h3>
+                        <p>Expense overview</p>
+                    </article>
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">◆</span>
+                            <small>PROFIT</small>
+                        </div>
+                        <h3>--</h3>
+                        <p>Profit overview</p>
+                    </article>
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">▦</span>
+                            <small>STOCK ITEMS</small>
+                        </div>
+                        <h3>--</h3>
+                        <p>Inventory overview</p>
+                    </article>
+                </div>
+
+                <p class="data-note">
+                    Business statistics will appear here as the relevant modules are connected.
+                </p>
+            </section>
+
+            <section class="command-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">YOUR TOOLS</p>
+                        <h2>Business Modules</h2>
+                        <p>Choose a module to manage that part of your business.</p>
+                    </div>
+                </div>
+
+                <div class="modules-grid">
+
+                    <a href="#" class="module-card">
+                        <span class="module-icon">▤</span>
+                        <h3>Sales & POS</h3>
+                        <p>Record sales and manage transactions.</p>
+                        <span class="module-arrow">Explore →</span>
+                    </a>
+
+                    <a href="/inventory.html" class="module-card">
+                        <span class="module-icon">▦</span>
+                        <h3>Inventory</h3>
+                        <p>Manage products, stock and quantities.</p>
+                        <span class="module-arrow">Explore →</span>
+                    </a>
+
+                    <a href="/debtors.html" class="module-card">
+                        <span class="module-icon">📒</span>
+                        <h3>Debtor Management</h3>
+                        <p>Track credit goods, customer debts, payments and balances.</p>
+                        <span class="module-arrow">Explore →</span>
+                    </a>
+
+                    <a href="#" class="module-card">
+                        <span class="module-icon">▥</span>
+                        <h3>Finance</h3>
+                        <p>Monitor expenses and finances.</p>
+                        <span class="module-arrow">Explore →</span>
+                    </a>
+
+                    <a href="#" class="module-card">
+                        <span class="module-icon">✦</span>
+                        <h3>WIN AI</h3>
+                        <p>Your intelligent business assistant.</p>
+                        <span class="module-arrow">Explore →</span>
+                    </a>
+
+                </div>
+            </section>
+
+            <section class="win-subscription-card" id="subscriptionCard">
+                <div class="subscription-header">
+                    <div>
+                        <p class="eyebrow">YOUR SUBSCRIPTION</p>
+                        <h2>WIN Pro</h2>
+                        <p id="subscriptionDescription">
+                            Loading your subscription...
+                        </p>
+                    </div>
+
+                    <span id="subscriptionStatus" class="subscription-status">
+                        Loading...
+                    </span>
+                </div>
+
+                <div class="subscription-countdown">
+                    <p>TIME REMAINING</p>
+                    <h2 id="trialCountdown">-- days -- hours -- minutes</h2>
+                    <p id="trialExpiry">Checking expiry date...</p>
+                </div>
+
+                <div class="subscription-footer">
+                    <div>
+                        <p class="subscription-pricing">
+                            KSh 700 <span>/ month</span>
+                        </p>
+                        <p class="subscription-pricing">
+                            KSh 7,000 <span>/ year</span>
+                        </p>
+                    </div>
+
+                    <a href="/upgrade.html" class="btn-primary">
+                        Upgrade to WIN Pro
+                    </a>
+                </div>
+
+                <p id="subscriptionNotice" class="subscription-notice"></p>
+            </section>
+
+            <footer class="dashboard-footer">
+                <p>WIN Business Suite © 2026</p>
+                <p>Manage Everything. Grow Smarter.</p>
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+
+    <script>
+        const themeToggle = document.getElementById("themeToggle");
+
+        themeToggle.addEventListener("click", () => {
+            document.body.classList.toggle("light-mode");
+
+            const mode = document.body.classList.contains("light-mode")
+                ? "light"
+                : "dark";
+
+            localStorage.setItem("winTheme", mode);
+        });
+
+        if (localStorage.getItem("winTheme") === "light") {
+            document.body.classList.add("light-mode");
+        }
+
+        const welcomeBusiness = document.getElementById("businessNameWelcome");
+        const businessNameElement = document.getElementById("businessName");
+
+        const updateWelcomeBusiness = () => {
+            if (welcomeBusiness && businessNameElement) {
+                welcomeBusiness.textContent = businessNameElement.textContent;
+            }
+        };
+
+        updateWelcomeBusiness();
+        setTimeout(updateWelcomeBusiness, 1000);
+    </script>
+
+</body>
+</html>

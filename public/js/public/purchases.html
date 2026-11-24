@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchases | WIN Business Suite</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app-pages.css">
+
+    <style>
+        .purchases-container {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+
+        .purchases-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .purchase-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .purchase-stat,
+        .purchase-panel {
+            background: white;
+            border: 1px solid #e5eaf0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .purchase-stat h3 {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .purchase-stat strong {
+            font-size: 27px;
+            color: #0f172a;
+        }
+
+        .purchase-panel {
+            margin-bottom: 25px;
+        }
+
+        .purchase-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .purchase-form label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .purchase-form input,
+        .purchase-form select,
+        .purchase-form textarea,
+        .purchase-search {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font: inherit;
+            background: white;
+        }
+
+        .purchase-form textarea {
+            min-height: 75px;
+            resize: vertical;
+        }
+
+        .purchase-full {
+            grid-column: 1 / -1;
+        }
+
+        .purchase-items {
+            margin-top: 10px;
+        }
+
+        .purchase-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid #e5eaf0;
+            border-radius: 9px;
+            background: #f8fafc;
+        }
+
+        .purchase-item label {
+            font-size: 13px;
+        }
+
+        .remove-item {
+            padding: 11px;
+            border: none;
+            border-radius: 7px;
+            background: #fee2e2;
+            color: #b91c1c;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .add-item-button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            border: 1px solid #0891b2;
+            border-radius: 7px;
+            background: #ecfeff;
+            color: #0e7490;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .purchase-total {
+            padding: 18px;
+            margin-top: 15px;
+            border-radius: 9px;
+            background: #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .purchase-total strong {
+            font-size: 25px;
+            color: #0f172a;
+        }
+
+        .purchase-table-wrap {
+            overflow-x: auto;
+        }
+
+        .purchase-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .purchase-table th,
+        .purchase-table td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #e5eaf0;
+        }
+
+        .purchase-table th {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .purchase-empty {
+            text-align: center;
+            color: #64748b;
+            padding: 30px;
+        }
+
+        .purchase-message {
+            margin-top: 12px;
+            font-weight: 600;
+        }
+
+        .purchase-message.error {
+            color: #b91c1c;
+        }
+
+        .purchase-message.success {
+            color: #15803d;
+        }
+
+        .view-button {
+            padding: 7px 11px;
+            border: none;
+            border-radius: 6px;
+            background: #e0f2fe;
+            color: #075985;
+            cursor: pointer;
+        }
+
+        @media (max-width: 650px) {
+            .purchase-form {
+                grid-template-columns: 1fr;
+            }
+
+            .purchase-full {
+                grid-column: auto;
+            }
+
+            .purchase-item {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .purchase-item .product-field {
+                grid-column: 1 / -1;
+            }
+
+            .purchase-total {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+    <div class="nav-actions">
+        <span id="userName">Loading...</span>
+        <button id="logoutButton" class="btn-secondary">Log Out</button>
+    </div>
+</header>
+
+<main class="purchases-container">
+
+    <div class="purchases-header">
+        <div>
+            <p class="eyebrow">BUSINESS MANAGEMENT</p>
+            <h1>Purchase Management</h1>
+            <p>Record purchases, manage suppliers and track stock purchases.</p>
+            <h3 id="businessName">Loading business...</h3>
+        </div>
+
+        <a href="/dashboard.html" class="btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <section class="purchase-stats">
+        <div class="purchase-stat">
+            <h3>Total Purchases</h3>
+            <strong id="totalPurchases">0</strong>
+        </div>
+
+        <div class="purchase-stat">
+            <h3>Total Purchase Value</h3>
+            <strong id="totalPurchaseValue">KSh 0.00</strong>
+        </div>
+
+        <div class="purchase-stat">
+            <h3>Recent Purchases</h3>
+            <strong id="recentPurchases">0</strong>
+        </div>
+    </section>
+
+    <section class="purchase-panel">
+        <h2>Record New Purchase</h2>
+        <p>Enter supplier and product purchase details below.</p>
+
+        <form id="purchaseForm" class="purchase-form">
+
+            <div class="purchase-full">
+                <label for="supplierId">Supplier</label>
+                <select id="supplierId">
+                    <option value="">No supplier selected</option>
+                </select>
+            </div>
+
+            <div class="purchase-full">
+                <label for="purchaseDate">Purchase Date</label>
+                <input
+                    type="date"
+                    id="purchaseDate"
+                    name="purchase_date"
+                    required
+                >
+                <small>Select the actual date you bought the products.</small>
+            </div>
+
+            <div class="purchase-full">
+                <h3>Purchase Items</h3>
+                <p>Add the products you purchased.</p>
+            </div>
+
+            <div class="purchase-full">
+                <div id="purchaseItems" class="purchase-items">
+                    <!-- Purchase item rows will be added by JavaScript -->
+                </div>
+
+                <button type="button" id="addItemButton"
+                        class="add-item-button">
+                    + Add Another Product
+                </button>
+            </div>
+
+            <div class="purchase-full">
+                <label for="purchaseNotes">Purchase Notes</label>
+                <textarea id="purchaseNotes"
+                          maxlength="1000"
+                          placeholder="Optional notes about this purchase"></textarea>
+            </div>
+
+            <div class="purchase-full">
+                <div class="purchase-total">
+                    <span>Total Purchase Amount</span>
+                    <strong id="purchaseTotal">KSh 0.00</strong>
+                </div>
+            </div>
+
+            <div class="purchase-full">
+                <button type="submit" id="savePurchaseButton"
+                        class="btn-primary">
+                    Record Purchase
+                </button>
+
+                <p id="purchaseMessage" class="purchase-message"></p>
+            </div>
+
+        </form>
+    </section>
+
+    <section class="purchase-panel">
+        <h2>Purchase History</h2>
+        <p>View your recorded business purchases.</p>
+
+        <input type="search" id="purchaseSearch"
+               class="purchase-search"
+               placeholder="Search purchases..."
+               style="margin: 15px 0;">
+
+        <div class="purchase-table-wrap">
+            <table class="purchase-table">
+                <thead>
+                    <tr>
+                        <th>Purchase Number</th>
+                        <th>Supplier</th>
+                        <th>Date</th>
+                        <th>Total Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="purchasesTableBody">
+                    <tr>
+                        <td colspan="5" class="purchase-empty">
+                            Loading purchases...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p id="historyMessage" class="purchase-message"></p>
+    </section>
+
+    <footer class="dashboard-footer">
+        <p>WIN Business Suite © 2026</p>
+        <p>Manage Everything. Grow Smarter.</p>
+    </footer>
+
+</main>
+
+<script src="/js/purchases.js"></script>
+
+</body>
+</html>
