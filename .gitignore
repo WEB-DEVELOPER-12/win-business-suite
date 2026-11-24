@@ -18,6 +18,7 @@ npm-debug.log*
 
 # Backups
 backups/
+private-data/business-backups/
 
 # Uploaded files
 uploads/
