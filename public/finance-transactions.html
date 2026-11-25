@@ -1,0 +1,969 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Records & Reports | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --navy: #0b1730;
+            --navy-light: #142544;
+            --blue: #08b6e8;
+            --blue-dark: #078bb8;
+            --background: #f3f6fb;
+            --white: #ffffff;
+            --text: #18243a;
+            --muted: #718096;
+            --border: #e3e9f2;
+            --green: #15965c;
+            --red: #dc4545;
+            --orange: #c77b13;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            background: var(--navy);
+            color: white;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: .4px;
+        }
+
+        .brand span {
+            color: var(--blue);
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+            background: #203858;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 28px auto;
+            padding: 0 20px 40px;
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        h1 {
+            font-size: 26px;
+            margin: 0 0 7px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .panel {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 21px;
+            margin-bottom: 22px;
+            box-shadow: 0 3px 12px rgba(15, 35, 65, .035);
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin: 0 0 7px;
+        }
+
+        .panel-description {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0 0 18px;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 13px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            min-width: 145px;
+            flex: 1;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #526176;
+        }
+
+        input,
+        select {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: white;
+            color: var(--text);
+            outline: none;
+            font-size: 13px;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--blue);
+        }
+
+        button {
+            min-height: 41px;
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .primary {
+            background: var(--blue);
+            color: #062033;
+        }
+
+        .secondary {
+            background: #eaf0f7;
+            color: #263b58;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 19px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 11px;
+        }
+
+        .stat-value {
+            font-size: 23px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .stat-note {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 7px;
+        }
+
+        .positive {
+            color: var(--green);
+        }
+
+        .negative {
+            color: var(--red);
+        }
+
+        .report-table,
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .report-table td {
+            padding: 13px 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .report-table td:last-child {
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .report-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .report-total {
+            background: #f1f8fc;
+        }
+
+        .report-result {
+            font-size: 16px !important;
+            font-weight: 800 !important;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 13px 11px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
+        .transaction-table th {
+            background: #f6f8fc;
+            color: #617087;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .transaction-table tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .type-income {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .type-expense {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        .status {
+            display: inline-block;
+            border-radius: 20px;
+            padding: 5px 9px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e4f7ed;
+            color: #16804e;
+        }
+
+        .status-voided {
+            background: #fdeaea;
+            color: #bd3434;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--muted);
+            padding: 30px 10px;
+            font-size: 13px;
+        }
+
+        .message {
+            display: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 17px;
+            font-size: 13px;
+        }
+
+        .message.error {
+            display: block;
+            background: #fff0f0;
+            color: #b42f2f;
+        }
+
+        .message.info {
+            display: block;
+            background: #eaf7fc;
+            color: #176b8b;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .pagination-info {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .loading {
+            color: var(--muted);
+            font-size: 13px;
+            padding: 15px 0;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 11px;
+            padding: 15px;
+        }
+
+        @media (max-width: 900px) {
+            .cards {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 520px) {
+            main {
+                padding: 0 12px 30px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 9px;
+            }
+
+            .stat-card {
+                padding: 13px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .panel {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 21px;
+            }
+
+            .field {
+                min-width: 100%;
+            }
+
+            .filters button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="brand">WIN <span>BUSINESS SUITE</span></div>
+    <a href="/finance.html">← Back to Finance Centre</a>
+</header>
+
+<main>
+
+    <section class="page-heading">
+        <div>
+            <h1>Financial Records & Reports</h1>
+            <p class="subtitle">
+                Review financial performance and track income and expense records.
+            </p>
+        </div>
+    </section>
+
+    <div id="pageMessage" class="message"></div>
+
+    <section class="panel">
+        <h2>Report Period</h2>
+        <p class="panel-description">
+            Select a date range to update your financial summary and transaction records.
+        </p>
+
+        <div class="filters">
+            <div class="field">
+                <label for="startDate">From date</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="field">
+                <label for="endDate">To date</label>
+                <input type="date" id="endDate">
+            </div>
+
+            <button class="primary" id="generateButton">
+                Generate Report
+            </button>
+        </div>
+    </section>
+
+    <section class="cards">
+        <div class="stat-card">
+            <div class="stat-label">Sales Revenue</div>
+            <div class="stat-value" id="salesRevenue">KES 0.00</div>
+            <div class="stat-note">Completed sales</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Other Income</div>
+            <div class="stat-value positive" id="otherIncome">KES 0.00</div>
+            <div class="stat-note">Active income records</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Total Expenses</div>
+            <div class="stat-value negative" id="totalExpenses">KES 0.00</div>
+            <div class="stat-note">Active expense records</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Net Profit / Loss</div>
+            <div class="stat-value" id="netProfit">KES 0.00</div>
+            <div class="stat-note">Calculated for selected period</div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Financial Performance Report</h2>
+        <p class="panel-description">
+            Profit & Loss statement for the selected period.
+        </p>
+
+        <div id="reportLoading" class="loading">
+            Loading financial report...
+        </div>
+
+        <div class="table-wrapper">
+            <table class="report-table">
+                <tbody>
+                    <tr>
+                        <td>Sales Revenue</td>
+                        <td id="reportSales">KES 0.00</td>
+                    </tr>
+
+                    <tr>
+                        <td>Cost of Goods Sold</td>
+                        <td id="reportCogs">KES 0.00</td>
+                    </tr>
+
+                    <tr class="report-total">
+                        <td>Gross Profit</td>
+                        <td id="reportGrossProfit">KES 0.00</td>
+                    </tr>
+
+                    <tr>
+                        <td>Other Income</td>
+                        <td id="reportOtherIncome">KES 0.00</td>
+                    </tr>
+
+                    <tr class="report-total">
+                        <td>Total Income (Gross Profit + Other Income)</td>
+                        <td id="reportTotalIncome">KES 0.00</td>
+                    </tr>
+
+                    <tr>
+                        <td>Total Expenses</td>
+                        <td id="reportExpenses">KES 0.00</td>
+                    </tr>
+
+                    <tr class="report-total">
+                        <td class="report-result">Net Profit / Loss</td>
+                        <td class="report-result" id="reportNetProfit">KES 0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Transaction History</h2>
+        <p class="panel-description">
+            Search and review recorded income and expenses, including voided records.
+        </p>
+
+        <div class="filters">
+            <div class="field">
+                <label for="transactionSearch">Search records</label>
+                <input
+                    type="search"
+                    id="transactionSearch"
+                    placeholder="Description, category or reference"
+                >
+            </div>
+
+            <div class="field">
+                <label for="statusFilter">Record status</label>
+                <select id="statusFilter">
+                    <option value="all">All records</option>
+                    <option value="active">Active only</option>
+                    <option value="voided">Voided only</option>
+                </select>
+            </div>
+
+            <button class="primary" id="searchButton">
+                Search
+            </button>
+
+            <button class="secondary" id="resetSearchButton">
+                Reset Search
+            </button>
+        </div>
+
+        <div id="transactionLoading" class="loading">
+            Loading transactions...
+        </div>
+
+        <div class="table-wrapper">
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Payment Method</th>
+                        <th>Reference</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="transactionRows">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            Loading transaction records...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <div class="pagination-info" id="paginationInfo">
+                No records loaded.
+            </div>
+
+            <div class="pagination-buttons">
+                <button class="secondary" id="previousButton" disabled>
+                    Previous
+                </button>
+
+                <button class="secondary" id="nextButton" disabled>
+                    Next
+                </button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    WIN Business Suite · Manage Everything. Grow Smarter.
+</footer>
+
+<script>
+    const state = {
+        page: 1,
+        limit: 25,
+        totalPages: 0,
+        totalRecords: 0
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function kenyaToday() {
+        const parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Africa/Nairobi",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).formatToParts(new Date());
+
+        const values = {};
+
+        parts.forEach(part => {
+            values[part.type] = part.value;
+        });
+
+        return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function formatMoney(value) {
+        const amount = Number(value || 0);
+
+        return "KES " + amount.toLocaleString("en-KE", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        })[character]);
+    }
+
+    function showMessage(message, type = "error") {
+        const element = $("pageMessage");
+
+        element.textContent = message;
+        element.className = `message ${type}`;
+    }
+
+    function clearMessage() {
+        $("pageMessage").textContent = "";
+        $("pageMessage").className = "message";
+    }
+
+    async function apiRequest(url) {
+        const response = await fetch(url, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            window.location.href = "/login.html";
+            throw new Error("Your session has expired. Please log in again.");
+        }
+
+        let data;
+
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error("The server returned an invalid response.");
+        }
+
+        if (!response.ok || data.success === false) {
+            throw new Error(data.message || "Unable to load the requested information.");
+        }
+
+        return data;
+    }
+
+    function getSelectedDates() {
+        const startDate = $("startDate").value;
+        const endDate = $("endDate").value;
+
+        if (!startDate || !endDate) {
+            throw new Error("Please select both report dates.");
+        }
+
+        if (startDate > endDate) {
+            throw new Error("The From date cannot be later than the To date.");
+        }
+
+        return { startDate, endDate };
+    }
+
+    function updateProfitColor(element, value) {
+        element.classList.remove("positive", "negative");
+
+        if (Number(value) > 0) {
+            element.classList.add("positive");
+        } else if (Number(value) < 0) {
+            element.classList.add("negative");
+        }
+    }
+
+    async function loadFinancialSummary(dates) {
+        const params = new URLSearchParams({
+            start_date: dates.startDate,
+            end_date: dates.endDate
+        });
+
+        const [summaryData, reportData] = await Promise.all([
+            apiRequest(`/api/finance/summary?${params}`),
+            apiRequest(`/api/finance/profit-loss?${params}`)
+        ]);
+
+        const summary = summaryData.summary;
+        const report = reportData.report;
+
+        if (!summary || !report) {
+            throw new Error("The financial report data is incomplete.");
+        }
+
+        $("salesRevenue").textContent = formatMoney(summary.sales_revenue);
+        $("otherIncome").textContent = formatMoney(summary.other_income);
+        $("totalExpenses").textContent = formatMoney(summary.expenses);
+        $("netProfit").textContent = formatMoney(summary.net_profit);
+
+        updateProfitColor($("netProfit"), summary.net_profit);
+
+        $("reportSales").textContent = formatMoney(report.sales_revenue);
+        $("reportCogs").textContent = formatMoney(report.cost_of_goods);
+        $("reportGrossProfit").textContent = formatMoney(report.gross_profit);
+        $("reportOtherIncome").textContent = formatMoney(report.other_income);
+        $("reportTotalIncome").textContent = formatMoney(report.total_income);
+        $("reportExpenses").textContent = formatMoney(report.expenses);
+        $("reportNetProfit").textContent = formatMoney(report.net_profit);
+
+        updateProfitColor($("reportNetProfit"), report.net_profit);
+
+        $("reportLoading").style.display = "none";
+    }
+
+    async function loadTransactions() {
+        const dates = getSelectedDates();
+
+        $("transactionLoading").style.display = "block";
+        $("transactionLoading").textContent = "Loading transactions...";
+
+        const params = new URLSearchParams({
+            start_date: dates.startDate,
+            end_date: dates.endDate,
+            page: String(state.page),
+            limit: String(state.limit),
+            status: $("statusFilter").value,
+            search: $("transactionSearch").value.trim()
+        });
+
+        const data = await apiRequest(
+            `/api/finance/transactions?${params}`
+        );
+
+        const transactions = Array.isArray(data.transactions)
+            ? data.transactions
+            : [];
+
+        const pagination = data.pagination || {};
+
+        state.page = Number(pagination.page || 1);
+        state.totalPages = Number(pagination.total_pages || 0);
+        state.totalRecords = Number(pagination.total || 0);
+
+        renderTransactions(transactions);
+
+        $("paginationInfo").textContent =
+            `Page ${state.page} of ${Math.max(state.totalPages, 1)} · ` +
+            `${state.totalRecords} total records`;
+
+        $("previousButton").disabled = state.page <= 1;
+        $("nextButton").disabled =
+            state.totalPages === 0 || state.page >= state.totalPages;
+
+        $("transactionLoading").style.display = "none";
+    }
+
+    function renderTransactions(transactions) {
+        const tbody = $("transactionRows");
+
+        if (!transactions.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        No transactions found for the selected filters.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        tbody.innerHTML = transactions.map(record => {
+            const isIncome = record.type === "income";
+            const typeLabel = isIncome ? "Income" : "Expense";
+
+            const typeClass = isIncome
+                ? "type-income"
+                : "type-expense";
+
+            const status = record.status === "voided"
+                ? "voided"
+                : "active";
+
+            const statusLabel = status === "voided"
+                ? "Voided"
+                : "Active";
+
+            const amountPrefix = isIncome ? "+" : "−";
+
+            return `
+                <tr>
+                    <td>${escapeHTML(record.transaction_date)}</td>
+
+                    <td class="${typeClass}">
+                        ${typeLabel}
+                    </td>
+
+                    <td>${escapeHTML(record.category)}</td>
+
+                    <td>${escapeHTML(record.description)}</td>
+
+                    <td>
+                        <strong>${amountPrefix}${formatMoney(record.amount)}</strong>
+                    </td>
+
+                    <td>${escapeHTML(
+                        String(record.payment_method || "")
+                            .replaceAll("_", " ")
+                    )}</td>
+
+                    <td>${escapeHTML(record.reference || "—")}</td>
+
+                    <td>
+                        <span class="status status-${status}">
+                            ${statusLabel}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+    async function loadPage() {
+        clearMessage();
+
+        $("generateButton").disabled = true;
+        $("reportLoading").style.display = "block";
+        $("reportLoading").textContent = "Loading financial report...";
+
+        try {
+            const dates = getSelectedDates();
+
+            await Promise.all([
+                loadFinancialSummary(dates),
+                loadTransactions()
+            ]);
+        } catch (error) {
+            showMessage(error.message);
+
+            $("reportLoading").style.display = "block";
+            $("reportLoading").textContent =
+                "Unable to load the financial report.";
+        } finally {
+            $("generateButton").disabled = false;
+        }
+    }
+
+    $("generateButton").addEventListener("click", async () => {
+        state.page = 1;
+        await loadPage();
+    });
+
+    $("searchButton").addEventListener("click", async () => {
+        state.page = 1;
+
+        clearMessage();
+
+        try {
+            await loadTransactions();
+        } catch (error) {
+            showMessage(error.message);
+        }
+    });
+
+    $("resetSearchButton").addEventListener("click", async () => {
+        $("transactionSearch").value = "";
+        $("statusFilter").value = "all";
+
+        state.page = 1;
+
+        clearMessage();
+
+        try {
+            await loadTransactions();
+        } catch (error) {
+            showMessage(error.message);
+        }
+    });
+
+    $("previousButton").addEventListener("click", async () => {
+        if (state.page <= 1) return;
+
+        state.page--;
+
+        try {
+            await loadTransactions();
+        } catch (error) {
+            showMessage(error.message);
+        }
+    });
+
+    $("nextButton").addEventListener("click", async () => {
+        if (state.page >= state.totalPages) return;
+
+        state.page++;
+
+        try {
+            await loadTransactions();
+        } catch (error) {
+            showMessage(error.message);
+        }
+    });
+
+    $("transactionSearch").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            $("searchButton").click();
+        }
+    });
+
+    async function initializePage() {
+        const today = kenyaToday();
+
+        $("startDate").value = today;
+        $("endDate").value = today;
+
+        await loadPage();
+    }
+
+    initializePage();
+</script>
+
+</body>
+</html>

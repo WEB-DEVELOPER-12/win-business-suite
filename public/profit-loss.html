@@ -1,0 +1,499 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit & Loss | WIN Business Suite</title>
+    <style>
+        :root {
+            --navy: #071b35;
+            --navy-light: #102d50;
+            --cyan: #12bde0;
+            --background: #f3f7fb;
+            --text: #172b45;
+            --muted: #718096;
+            --white: #ffffff;
+            --border: #e5edf5;
+            --green: #159b69;
+            --red: #dc5555;
+            --shadow: 0 5px 20px rgba(7,27,53,.06);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--navy);
+            color: white;
+            padding: 17px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand { font-size: 20px; font-weight: 800; }
+        .brand span { color: var(--cyan); }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            background: var(--navy-light);
+            border: 1px solid rgba(255,255,255,.15);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 35px auto;
+        }
+
+        h1 { color: var(--navy); font-size: 29px; margin-bottom: 8px; }
+        .intro { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+        .panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 23px;
+            margin-top: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel h2 {
+            color: var(--navy);
+            font-size: 18px;
+            margin-bottom: 18px;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            gap: 13px;
+        }
+
+        .field { flex: 1; min-width: 180px; }
+
+        label {
+            display: block;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text);
+            background: white;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 12px 17px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .primary {
+            background: var(--navy);
+            color: white;
+        }
+
+        .primary:hover { background: var(--navy-light); }
+
+        .secondary {
+            background: #e8faff;
+            color: #087e9a;
+            border: 1px solid #c8f1fa;
+        }
+
+        button:disabled { opacity: .6; cursor: not-allowed; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .summary-card {
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 19px;
+            background: white;
+            min-width: 0;
+        }
+
+        .summary-card.highlight {
+            background: #f1fbff;
+            border-color: #c9edf5;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 11px;
+        }
+
+        .summary-value {
+            color: var(--navy);
+            font-size: 23px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .positive { color: var(--green); }
+        .negative { color: var(--red); }
+
+        .statement {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .statement td {
+            padding: 15px 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .statement td:last-child {
+            text-align: right;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .statement .subtotal td {
+            color: var(--navy);
+            font-weight: 800;
+            background: #f7fafc;
+        }
+
+        .statement .final-total td {
+            color: var(--navy);
+            font-weight: 800;
+            font-size: 16px;
+            border-top: 2px solid var(--navy);
+            background: #f1fbff;
+        }
+
+        .status {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .status.error {
+            display: block;
+            color: #9d3030;
+            background: #fff0f0;
+            border: 1px solid #f3d1d1;
+        }
+
+        .status.loading {
+            display: block;
+            color: var(--muted);
+            background: #f7fafc;
+            border: 1px solid var(--border);
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 35px 15px 25px;
+        }
+
+        @media (max-width: 750px) {
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 520px) {
+            .topbar { padding: 15px 4%; }
+            .brand { font-size: 16px; }
+            .back-link { font-size: 12px; padding: 9px; }
+            .container { width: 92%; margin: 25px auto; }
+            h1 { font-size: 25px; }
+            .panel { padding: 16px; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .summary-value { font-size: 21px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand">WIN <span>Business Suite</span></div>
+    <a href="/finance.html" class="back-link">← Finance Centre</a>
+</header>
+
+<main class="container">
+    <h1>Profit & Loss</h1>
+    <p class="intro">
+        Understand your sales revenue, cost of goods, gross profit,
+        other income, expenses and net profit.
+    </p>
+
+    <section class="panel">
+        <h2>Report Period</h2>
+
+        <div class="filters">
+            <div class="field">
+                <label for="startDate">From</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="field">
+                <label for="endDate">To</label>
+                <input type="date" id="endDate">
+            </div>
+
+            <button class="primary" id="applyButton" type="button">
+                Generate Report
+            </button>
+
+            <button class="secondary" id="todayButton" type="button">
+                Today
+            </button>
+        </div>
+
+        <div id="statusMessage" class="status"></div>
+    </section>
+
+    <section class="panel">
+        <h2>Financial Summary</h2>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Sales Revenue</div>
+                <div class="summary-value" id="salesRevenue">KSh 0.00</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Cost of Goods Sold</div>
+                <div class="summary-value" id="costOfGoods">KSh 0.00</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Gross Profit</div>
+                <div class="summary-value positive" id="grossProfit">KSh 0.00</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Other Income</div>
+                <div class="summary-value positive" id="otherIncome">KSh 0.00</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Total Income</div>
+                <div class="summary-value" id="totalIncome">KSh 0.00</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Expenses</div>
+                <div class="summary-value" id="expenses">KSh 0.00</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Profit & Loss Statement</h2>
+
+        <table class="statement">
+            <tbody>
+                <tr>
+                    <td>Sales Revenue</td>
+                    <td id="statementRevenue">KSh 0.00</td>
+                </tr>
+                <tr>
+                    <td>Less: Cost of Goods Sold</td>
+                    <td id="statementCost">KSh 0.00</td>
+                </tr>
+                <tr class="subtotal">
+                    <td>Gross Profit</td>
+                    <td id="statementGross">KSh 0.00</td>
+                </tr>
+                <tr>
+                    <td>Add: Other Income</td>
+                    <td id="statementIncome">KSh 0.00</td>
+                </tr>
+                <tr class="subtotal">
+                    <td>Total Income</td>
+                    <td id="statementTotalIncome">KSh 0.00</td>
+                </tr>
+                <tr>
+                    <td>Less: Active Expenses</td>
+                    <td id="statementExpenses">KSh 0.00</td>
+                </tr>
+                <tr class="final-total">
+                    <td>Net Profit / Loss</td>
+                    <td id="statementNet" class="positive">KSh 0.00</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>How the Calculation Works</h2>
+        <p class="intro">
+            Gross Profit = Sales Revenue − Cost of Goods Sold.
+            Net Profit = Gross Profit + Other Income − Active Expenses.
+            Voided expenses and voided income are excluded.
+        </p>
+    </section>
+</main>
+
+<footer class="footer">
+    © 2026 WIN Business Suite. All rights reserved.
+</footer>
+
+<script>
+    const startInput = document.getElementById("startDate");
+    const endInput = document.getElementById("endDate");
+    const applyButton = document.getElementById("applyButton");
+    const todayButton = document.getElementById("todayButton");
+    const statusMessage = document.getElementById("statusMessage");
+
+    function kenyaToday() {
+        const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Africa/Nairobi",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).formatToParts(new Date());
+
+        const values = {};
+        parts.forEach(part => {
+            values[part.type] = part.value;
+        });
+
+        return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function formatMoney(value) {
+        return new Intl.NumberFormat("en-KE", {
+            style: "currency",
+            currency: "KES",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(Number(value) || 0);
+    }
+
+    function displayValue(id, value) {
+        document.getElementById(id).textContent = formatMoney(value);
+    }
+
+    function displayProfit(id, value) {
+        const element = document.getElementById(id);
+        element.textContent = formatMoney(value);
+        element.classList.remove("positive", "negative");
+        element.classList.add(Number(value) < 0 ? "negative" : "positive");
+    }
+
+    async function loadProfitLoss() {
+        const startDate = startInput.value;
+        const endDate = endInput.value;
+
+        if (!startDate || !endDate || startDate > endDate) {
+            statusMessage.className = "status error";
+            statusMessage.textContent =
+                "Please select a valid date range.";
+            return;
+        }
+
+        applyButton.disabled = true;
+        todayButton.disabled = true;
+        statusMessage.className = "status loading";
+        statusMessage.textContent = "Generating your Profit & Loss report...";
+
+        try {
+            const params = new URLSearchParams({
+                start_date: startDate,
+                end_date: endDate
+            });
+
+            const response = await fetch(
+                `/api/finance/profit-loss?${params.toString()}`,
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: { "Accept": "application/json" }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || "Unable to generate the report."
+                );
+            }
+
+            const report = data.report;
+
+            displayValue("salesRevenue", report.sales_revenue);
+            displayValue("costOfGoods", report.cost_of_goods);
+            displayProfit("grossProfit", report.gross_profit);
+            displayValue("otherIncome", report.other_income);
+            displayValue("totalIncome", report.total_income);
+            displayValue("expenses", report.expenses);
+
+            displayValue("statementRevenue", report.sales_revenue);
+            displayValue("statementCost", report.cost_of_goods);
+            displayValue("statementGross", report.gross_profit);
+            displayValue("statementIncome", report.other_income);
+            displayValue("statementTotalIncome", report.total_income);
+            displayValue("statementExpenses", report.expenses);
+            displayProfit("statementNet", report.net_profit);
+
+            statusMessage.className = "status";
+            statusMessage.textContent = "";
+
+        } catch (error) {
+            statusMessage.className = "status error";
+            statusMessage.textContent =
+                error.message || "Could not load the Profit & Loss report.";
+        } finally {
+            applyButton.disabled = false;
+            todayButton.disabled = false;
+        }
+    }
+
+    applyButton.addEventListener("click", loadProfitLoss);
+
+    todayButton.addEventListener("click", () => {
+        const today = kenyaToday();
+        startInput.value = today;
+        endInput.value = today;
+        loadProfitLoss();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const today = kenyaToday();
+        startInput.value = today;
+        endInput.value = today;
+        loadProfitLoss();
+    });
+</script>
+
+</body>
+</html>

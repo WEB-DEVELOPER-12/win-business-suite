@@ -1,8 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101d3a">
     <title>Login | WIN Business Suite</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/app-pages.css">
@@ -39,12 +41,21 @@
                     required
                 >
 
+                <p style="text-align:right; margin:8px 0 18px;">
+                    <a href="/password-reset.html">Forgot Password?</a>
+                </p>
+
                 <button type="submit" class="btn-primary" id="loginButton">
                     Log In
                 </button>
 
                 <p id="loginMessage" role="status" aria-live="polite"></p>
             </form>
+
+            <p style="text-align:center; margin-top:18px;">
+                Didn't receive your verification email?
+                <a href="/resend-verification.html">Resend Verification Email</a>
+            </p>
 
             <p class="auth-switch">
                 Don't have an account?

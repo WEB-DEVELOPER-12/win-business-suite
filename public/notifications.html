@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071426">
+
+    <title>Notifications | WIN Business Suite</title>
+
+    <link rel="stylesheet" href="/css/notifications-page.css">
+</head>
+
+<body>
+    <div class="notifications-page">
+
+        <header class="notifications-topbar">
+            <a href="/dashboard.html" class="win-brand">
+                <span class="win-brand-mark">W</span>
+                <span class="win-brand-name">WIN Business Suite</span>
+            </a>
+
+            <a href="/dashboard.html" class="back-dashboard">
+                <span aria-hidden="true">←</span>
+                Dashboard
+            </a>
+        </header>
+
+        <main class="notifications-main">
+
+            <section class="notifications-heading">
+                <div>
+                    <p class="page-eyebrow">WIN BUSINESS SUITE</p>
+                    <h1>Notifications</h1>
+                    <p class="page-description">
+                        Stay informed about updates and important activity
+                        in your WIN Business Suite account.
+                    </p>
+                </div>
+
+                <div class="unread-summary">
+                    <span class="unread-summary-number"
+                          id="notificationUnreadCount">0</span>
+                    <span class="unread-summary-label">Unread</span>
+                </div>
+            </section>
+
+            <section class="notification-toolbar">
+                <div class="date-filter-area">
+                    <label for="dateRangeFilter">Filter by date</label>
+
+                    <select id="dateRangeFilter">
+                        <option value="all">All dates</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="last7">Last 7 days</option>
+                        <option value="last30">Last 30 days</option>
+                        <option value="month">This month</option>
+                        <option value="custom">Custom date range</option>
+                    </select>
+                </div>
+
+                <button
+                    type="button"
+                    id="markAllNotificationsRead"
+                    class="mark-all-read-button">
+                    Mark All as Read
+                </button>
+            </section>
+
+            <section
+                id="customDateRange"
+                class="custom-date-range"
+                hidden>
+
+                <div class="date-input-group">
+                    <label for="notificationDateFrom">From</label>
+                    <input type="date" id="notificationDateFrom">
+                </div>
+
+                <div class="date-input-group">
+                    <label for="notificationDateTo">To</label>
+                    <input type="date" id="notificationDateTo">
+                </div>
+
+                <button
+                    type="button"
+                    id="applyNotificationDates"
+                    class="apply-date-button">
+                    Apply
+                </button>
+
+                <button
+                    type="button"
+                    id="clearNotificationDates"
+                    class="clear-date-button">
+                    Clear
+                </button>
+            </section>
+
+            <section class="notification-list-section">
+                <div class="notification-list-heading">
+                    <h2>Your activity</h2>
+                    <span id="notificationListSummary">
+                        Loading notifications...
+                    </span>
+                </div>
+
+                <div
+                    id="notificationsLoading"
+                    class="notifications-loading"
+                    role="status">
+                    Loading your notifications...
+                </div>
+
+                <div
+                    id="notificationsList"
+                    class="notifications-list"
+                    aria-live="polite">
+                </div>
+
+                <div
+                    id="notificationsEmpty"
+                    class="notifications-empty"
+                    hidden>
+                    <div class="empty-notification-icon"
+                         aria-hidden="true">🔔</div>
+                    <h3>No notifications yet</h3>
+                    <p>
+                        Important updates and messages will appear here.
+                    </p>
+                </div>
+
+                <div
+                    id="notificationsError"
+                    class="notifications-error"
+                    role="alert"
+                    hidden>
+                    We could not load your notifications.
+                    Please refresh the page and try again.
+                </div>
+
+                <div
+                    id="notificationsPagination"
+                    class="notifications-pagination"
+                    hidden>
+
+                    <button
+                        type="button"
+                        id="previousNotificationsPage">
+                        Previous
+                    </button>
+
+                    <span id="notificationPageInformation">
+                        Page 1
+                    </span>
+
+                    <button
+                        type="button"
+                        id="nextNotificationsPage">
+                        Next
+                    </button>
+                </div>
+            </section>
+
+            <footer class="notifications-footer">
+                <p>WIN Business Suite</p>
+                <span>Manage Everything. Grow Smarter.</span>
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="/js/notifications-page.js"></script>
+</body>
+</html>

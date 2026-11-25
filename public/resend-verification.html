@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101d3a">
+    <title>Resend Verification - WIN Business Suite</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #17233c;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 460px;
+            padding: 36px 30px;
+            background: #fff;
+            border: 1px solid #e4eaf2;
+            border-radius: 16px;
+            box-shadow: 0 12px 35px rgba(16, 29, 58, .08);
+        }
+
+        .brand {
+            text-align: center;
+            color: #101d3a;
+            font-size: 25px;
+            font-weight: 800;
+            margin-bottom: 28px;
+        }
+
+        .brand span { color: #13b9df; }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            color: #101d3a;
+        }
+
+        .description {
+            text-align: center;
+            color: #68758a;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #d8e0eb;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            border: 0;
+            border-radius: 9px;
+            background: #13b9df;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+        }
+
+        #resendMessage {
+            margin-top: 18px;
+            line-height: 1.5;
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 24px;
+            text-align: center;
+            color: #0786a7;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 28px;
+            text-align: center;
+            color: #8994a6;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="brand">WIN <span>Business Suite</span></div>
+
+        <h1>Resend Verification Email</h1>
+
+        <p class="description">
+            Enter your registered email address to request a new
+            verification link. Each link expires after 10 minutes.
+        </p>
+
+        <form id="resendForm">
+            <label for="email">Email Address</label>
+
+            <input
+                id="email"
+                type="email"
+                autocomplete="email"
+                placeholder="Enter your registered email"
+                required
+            >
+
+            <button id="resendButton" type="submit">
+                Resend Verification Email
+            </button>
+        </form>
+
+        <p id="resendMessage" role="status" aria-live="polite"></p>
+
+        <a class="back-link" href="/login.html">Back to Login</a>
+
+        <div class="footer">
+            WIN Business Suite Team<br>
+            Manage Everything. Grow Smarter.
+        </div>
+    </main>
+
+    <script src="/js/resend-verification.js"></script>
+</body>
+</html>

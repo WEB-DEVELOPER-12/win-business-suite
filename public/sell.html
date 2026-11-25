@@ -1,0 +1,895 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell Item | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --surface: #111c2e;
+            --surface-light: #192941;
+            --border: #263750;
+            --text: #f4f8ff;
+            --muted: #91a3bb;
+            --cyan: #22c5e8;
+            --green: #13c98a;
+            --red: #ff6678;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        .page {
+            width: min(100% - 30px, 620px);
+            margin: 0 auto;
+            padding: 24px 0 40px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .back {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 22px;
+        }
+
+        .heading h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .heading p {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .field {
+            margin-bottom: 19px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 9px;
+            color: #c3d0e0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            width: 100%;
+            min-height: 49px;
+            padding: 0 14px;
+            outline: none;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(34, 197, 232, .10);
+        }
+
+        input::placeholder {
+            color: #71839b;
+        }
+
+        select option {
+            background: var(--surface);
+        }
+
+        .product-card {
+            display: none;
+            padding: 20px;
+            margin: 16px 0 22px;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            background: linear-gradient(135deg, #172941, #111c2e);
+        }
+
+        .product-card.visible {
+            display: block;
+        }
+
+        .product-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .product-name {
+            margin: 0;
+            font-size: 21px;
+            font-weight: 750;
+        }
+
+        .stock-label {
+            padding: 6px 10px;
+            border-radius: 20px;
+            background: rgba(19, 201, 138, .12);
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .product-price {
+            margin-top: 15px;
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .product-meta {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .section-title {
+            margin: 25px 0 16px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 15px;
+            font-weight: 750;
+        }
+
+        .discount-wrap {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .currency {
+            min-width: 62px;
+            height: 49px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-light);
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .summary {
+            padding: 17px;
+            margin-top: 24px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--surface);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 11px 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .summary-row strong {
+            color: var(--text);
+            font-weight: 650;
+        }
+
+        .summary-divider {
+            height: 1px;
+            margin: 15px 0;
+            background: var(--border);
+        }
+
+        .total-row {
+            align-items: center;
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 750;
+        }
+
+        .total-row strong {
+            color: var(--cyan);
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .balance-row strong {
+            color: #ffbd66;
+        }
+
+        .message {
+            display: none;
+            padding: 12px 14px;
+            margin: 16px 0;
+            border-radius: 11px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.error {
+            border: 1px solid rgba(255, 102, 120, .25);
+            background: rgba(255, 102, 120, .09);
+            color: #ff9aa6;
+        }
+
+        .message.success {
+            border: 1px solid rgba(19, 201, 138, .25);
+            background: rgba(19, 201, 138, .09);
+            color: #64e8b7;
+        }
+
+        .message.warning {
+            border: 1px solid rgba(255, 189, 102, .25);
+            background: rgba(255, 189, 102, .09);
+            color: #ffcf91;
+        }
+
+        .complete-button {
+            width: 100%;
+            min-height: 55px;
+            margin-top: 20px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--cyan);
+            color: #061521;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .complete-button:hover {
+            filter: brightness(1.08);
+        }
+
+        .complete-button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            padding: 25px 0;
+            color: var(--muted);
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 430px) {
+            .page {
+                width: min(100% - 22px, 620px);
+                padding-top: 17px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+
+        <header class="topbar">
+            <a href="/sales.html" class="back" aria-label="Back to Sale Centre">←</a>
+
+            <div class="heading">
+                <h1>Sell Item</h1>
+                <p>Record a sale quickly and easily</p>
+            </div>
+        </header>
+
+        <div id="loading" class="loading">Loading your inventory...</div>
+
+        <form id="saleForm" hidden>
+
+            <div class="field">
+                <label for="productSelect">Select product</label>
+                <select id="productSelect" required>
+                    <option value="">Choose a product</option>
+                </select>
+            </div>
+
+            <section id="productCard" class="product-card">
+                <div class="product-top">
+                    <h2 id="productName" class="product-name">Product</h2>
+                    <span id="stockLabel" class="stock-label">In stock</span>
+                </div>
+
+                <div id="productPrice" class="product-price">KSh 0.00</div>
+                <div class="product-meta">Selling price per unit</div>
+            </section>
+
+            <div class="field">
+                <label for="quantity">Quantity to sell</label>
+                <input
+                    id="quantity"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    placeholder="Enter quantity"
+                    required
+                    disabled
+                >
+                <div class="hint" id="quantityHint">Select a product first.</div>
+            </div>
+
+            <div class="field">
+                <label for="customerName">Registered customer (optional)</label>
+                <input
+                    id="customerName"
+                    type="text"
+                    list="customerSuggestions"
+                    placeholder="Search registered customers"
+                    autocomplete="off"
+                >
+                <datalist id="customerSuggestions"></datalist>
+                <div class="hint">
+                    Select a registered debtor to link the sale to their account.
+                    An unpaid balance requires a registered customer with credit enabled.
+                </div>
+            </div>
+
+            <h2 class="section-title">Discount</h2>
+
+            <div class="field">
+                <label for="discount">Discount amount</label>
+                <div class="discount-wrap">
+                    <input
+                        id="discount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                        placeholder="Enter discount"
+                    >
+                    <span class="currency">KSh</span>
+                </div>
+                <div class="hint">Enter a fixed discount amount in Kenyan shillings.</div>
+            </div>
+
+            <h2 class="section-title">Payment</h2>
+
+            <div class="field">
+                <label for="paymentMethod">Payment method</label>
+                <select id="paymentMethod">
+                    <option value="cash">Cash</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="bank_transfer">Bank transfer</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="amountReceived">Amount received (KSh)</label>
+                <input
+                    id="amountReceived"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Amount received"
+                    value="0"
+                >
+            </div>
+
+            <div class="field" id="referenceField" hidden>
+                <label for="paymentReference">Payment reference (optional)</label>
+                <input
+                    id="paymentReference"
+                    type="text"
+                    maxlength="100"
+                    placeholder="Enter M-Pesa or bank reference"
+                >
+            </div>
+
+            <section class="summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <strong id="subtotalDisplay">KSh 0.00</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Discount</span>
+                    <strong id="discountDisplay">KSh 0.00</strong>
+                </div>
+
+                <div class="summary-divider"></div>
+
+                <div class="summary-row total-row">
+                    <span>Total</span>
+                    <strong id="totalDisplay">KSh 0.00</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Amount received</span>
+                    <strong id="receivedDisplay">KSh 0.00</strong>
+                </div>
+
+                <div class="summary-row balance-row">
+                    <span>Balance due</span>
+                    <strong id="balanceDisplay">KSh 0.00</strong>
+                </div>
+            </section>
+
+            <div id="message" class="message" role="status" aria-live="polite"></div>
+
+            <button id="completeButton" class="complete-button" type="submit">
+                Complete Sale
+            </button>
+
+        </form>
+    </main>
+
+    <script>
+        const form = document.getElementById("saleForm");
+        const loading = document.getElementById("loading");
+
+        const productSelect = document.getElementById("productSelect");
+        const productCard = document.getElementById("productCard");
+        const productName = document.getElementById("productName");
+        const productPrice = document.getElementById("productPrice");
+        const stockLabel = document.getElementById("stockLabel");
+
+        const quantityInput = document.getElementById("quantity");
+        const discountInput = document.getElementById("discount");
+        const customerInput = document.getElementById("customerName");
+
+        const paymentMethod = document.getElementById("paymentMethod");
+        const amountReceivedInput = document.getElementById("amountReceived");
+        const paymentReference = document.getElementById("paymentReference");
+        const referenceField = document.getElementById("referenceField");
+
+        const messageBox = document.getElementById("message");
+        const completeButton = document.getElementById("completeButton");
+
+        let products = [];
+        let debtors = [];
+        let selectedProduct = null;
+        let paymentAmountEdited = false;
+        let submitting = false;
+
+        function money(value) {
+            return Number(value || 0).toLocaleString("en-KE", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function roundMoney(value) {
+            return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+        }
+
+        function showMessage(message, type = "error") {
+            messageBox.textContent = message;
+            messageBox.className = `message show ${type}`;
+        }
+
+        function clearMessage() {
+            messageBox.textContent = "";
+            messageBox.className = "message";
+        }
+
+        async function apiRequest(url, options = {}) {
+            const response = await fetch(url, {
+                credentials: "same-origin",
+                ...options,
+                headers: {
+                    ...(options.headers || {}),
+                    ...(options.body ? {
+                        "Content-Type": "application/json"
+                    } : {})
+                }
+            });
+
+            if (response.status === 401) {
+                window.location.href = "/login.html";
+                throw new Error("Your session has expired. Please log in again.");
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || "Something went wrong.");
+            }
+
+            return data;
+        }
+
+        function extractProducts(data) {
+            if (Array.isArray(data)) return data;
+
+            return data.products ||
+                data.inventory ||
+                data.items ||
+                [];
+        }
+
+        function extractDebtors(data) {
+            if (Array.isArray(data)) return data;
+            return data.debtors || [];
+        }
+
+        function normalizeProduct(product) {
+            return {
+                id: Number(product.id),
+                name: product.product_name || product.name || "Unnamed product",
+                price: Number(product.selling_price ?? product.price ?? 0),
+                stock: Number(product.stock_quantity ?? product.quantity ?? 0)
+            };
+        }
+
+        async function loadProducts() {
+            const data = await apiRequest("/api/inventory");
+
+            products = extractProducts(data)
+                .map(normalizeProduct)
+                .filter(product =>
+                    Number.isInteger(product.id) &&
+                    product.id > 0
+                );
+
+            productSelect.innerHTML = '<option value="">Choose a product</option>';
+
+            products.forEach(product => {
+                const option = document.createElement("option");
+                option.value = product.id;
+                option.textContent = product.name;
+                productSelect.appendChild(option);
+            });
+
+            if (products.length === 0) {
+                throw new Error(
+                    "No inventory products were found. Add a product to Inventory first."
+                );
+            }
+        }
+
+        async function loadDebtors() {
+            const data = await apiRequest("/api/debtors");
+            debtors = extractDebtors(data);
+
+            const suggestions = document.getElementById("customerSuggestions");
+            suggestions.innerHTML = "";
+
+            debtors.forEach(debtor => {
+                const option = document.createElement("option");
+                option.value = debtor.full_name;
+                suggestions.appendChild(option);
+            });
+        }
+
+        function findCustomerByName(name) {
+            const cleanedName = name.trim().toLowerCase();
+
+            if (!cleanedName) return null;
+
+            return debtors.find(debtor =>
+                String(debtor.full_name || "").trim().toLowerCase() === cleanedName
+            ) || null;
+        }
+
+        function getNumbers() {
+            const quantity = Number(quantityInput.value);
+            const discount = Number(discountInput.value || 0);
+            const received = Number(amountReceivedInput.value || 0);
+
+            const subtotal = selectedProduct && quantity > 0
+                ? roundMoney(quantity * selectedProduct.price)
+                : 0;
+
+            const total = roundMoney(Math.max(0, subtotal - discount));
+
+            const balance = roundMoney(Math.max(0, total - received));
+
+            return {
+                quantity,
+                discount,
+                received,
+                subtotal,
+                total,
+                balance
+            };
+        }
+
+        function updateSummary() {
+            const subtotal = selectedProduct && Number(quantityInput.value) > 0
+                ? roundMoney(Number(quantityInput.value) * selectedProduct.price)
+                : 0;
+
+            const discount = Number(discountInput.value || 0);
+            const total = roundMoney(Math.max(0, subtotal - discount));
+
+            // Keep the received amount aligned with the total until
+            // the user manually changes it.
+            if (!paymentAmountEdited) {
+                amountReceivedInput.value = total.toFixed(2);
+            }
+
+            const values = getNumbers();
+
+            document.getElementById("subtotalDisplay").textContent =
+                `KSh ${money(values.subtotal)}`;
+
+            document.getElementById("discountDisplay").textContent =
+                `KSh ${money(values.discount)}`;
+
+            document.getElementById("totalDisplay").textContent =
+                `KSh ${money(values.total)}`;
+
+            document.getElementById("receivedDisplay").textContent =
+                `KSh ${money(values.received)}`;
+
+            document.getElementById("balanceDisplay").textContent =
+                `KSh ${money(values.balance)}`;
+        }
+
+        function selectProduct() {
+            const productId = Number(productSelect.value);
+
+            selectedProduct = products.find(product =>
+                product.id === productId
+            ) || null;
+
+            clearMessage();
+
+            if (!selectedProduct) {
+                productCard.classList.remove("visible");
+                quantityInput.value = "";
+                quantityInput.disabled = true;
+                quantityInput.removeAttribute("max");
+                updateSummary();
+                return;
+            }
+
+            productCard.classList.add("visible");
+            productName.textContent = selectedProduct.name;
+            productPrice.textContent = `KSh ${money(selectedProduct.price)}`;
+
+            stockLabel.textContent = `Available: ${selectedProduct.stock}`;
+
+            quantityInput.disabled = false;
+            quantityInput.max = selectedProduct.stock;
+            quantityInput.value = "";
+
+            document.getElementById("quantityHint").textContent =
+                `Maximum available quantity: ${selectedProduct.stock}`;
+
+            paymentAmountEdited = false;
+            updateSummary();
+        }
+
+        productSelect.addEventListener("change", selectProduct);
+
+        quantityInput.addEventListener("input", () => {
+            clearMessage();
+            updateSummary();
+        });
+
+        discountInput.addEventListener("input", () => {
+            clearMessage();
+            updateSummary();
+        });
+
+        amountReceivedInput.addEventListener("input", () => {
+            paymentAmountEdited = true;
+            clearMessage();
+            updateSummary();
+        });
+
+        paymentMethod.addEventListener("change", () => {
+            referenceField.hidden =
+                paymentMethod.value !== "mpesa" &&
+                paymentMethod.value !== "bank_transfer";
+        });
+
+        function validateSale(values, customer) {
+            if (!selectedProduct) {
+                return "Please select a product.";
+            }
+
+            if (
+                !Number.isFinite(values.quantity) ||
+                values.quantity <= 0
+            ) {
+                return "Enter a valid quantity.";
+            }
+
+            if (values.quantity > selectedProduct.stock) {
+                return `Only ${selectedProduct.stock} units are available.`;
+            }
+
+            if (
+                !Number.isFinite(values.discount) ||
+                values.discount < 0 ||
+                values.discount > values.subtotal
+            ) {
+                return "Enter a valid discount. It cannot exceed the subtotal.";
+            }
+
+            if (
+                !Number.isFinite(values.received) ||
+                values.received < 0
+            ) {
+                return "Enter a valid amount received.";
+            }
+
+            if (values.received > values.total) {
+                return "Amount received cannot exceed the sale total.";
+            }
+
+            if (values.total <= 0) {
+                return "The sale total must be greater than zero.";
+            }
+
+            if (values.balance > 0 && !customer) {
+                return "Select a registered customer before completing a sale with an unpaid balance.";
+            }
+
+            if (
+                values.balance > 0 &&
+                Number(customer.credit_enabled) !== 1
+            ) {
+                return "Credit is disabled for this customer. Enable credit in Debtor Management or collect full payment.";
+            }
+
+            return null;
+        }
+
+        function resetSaleForm() {
+            quantityInput.value = "";
+            discountInput.value = "0";
+            customerInput.value = "";
+            amountReceivedInput.value = "0";
+            paymentReference.value = "";
+
+            paymentAmountEdited = false;
+            updateSummary();
+        }
+
+        async function completeSale(event) {
+            event.preventDefault();
+
+            if (submitting) return;
+
+            clearMessage();
+
+            const values = getNumbers();
+            const customerName = customerInput.value.trim();
+            const customer = customerName
+                ? findCustomerByName(customerName)
+                : null;
+
+            const validationError = validateSale(values, customer);
+
+            if (validationError) {
+                showMessage(validationError);
+                return;
+            }
+
+            const payments = values.received > 0
+                ? [{
+                    amount: values.received,
+                    payment_method: paymentMethod.value,
+                    reference: paymentReference.value.trim()
+                }]
+                : [];
+
+            const payload = {
+                customer_id: customer ? Number(customer.id) : null,
+                items: [{
+                    product_id: selectedProduct.id,
+                    quantity: values.quantity
+                }],
+                discount_amount: values.discount,
+                notes: "",
+                payments
+            };
+
+            submitting = true;
+            completeButton.disabled = true;
+            completeButton.textContent = "Recording sale...";
+
+            try {
+                const result = await apiRequest("/api/sales", {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+
+                const saleNumber = result.sale?.sale_number || "Recorded";
+
+                resetSaleForm();
+
+                showMessage(
+                    `Sale completed successfully! Sale number: ${saleNumber}`,
+                    "success"
+                );
+
+                // The backend has already deducted the stock.
+                // Refresh the product list without risking a false
+                // failure message for a sale that was already saved.
+                try {
+                    const previousProductId = selectedProduct?.id;
+
+                    await loadProducts();
+
+                    if (previousProductId) {
+                        productSelect.value = String(previousProductId);
+                        selectProduct();
+                        resetSaleForm();
+                    }
+                } catch (refreshError) {
+                    showMessage(
+                        `Sale ${saleNumber} was saved, but inventory could not refresh. Reload the page to see the latest stock.`,
+                        "warning"
+                    );
+                }
+
+            } catch (error) {
+                showMessage(error.message || "Unable to complete the sale.");
+            } finally {
+                submitting = false;
+                completeButton.disabled = false;
+                completeButton.textContent = "Complete Sale";
+            }
+        }
+
+        form.addEventListener("submit", completeSale);
+
+        async function initialize() {
+            try {
+                await loadProducts();
+                await loadDebtors();
+
+                loading.hidden = true;
+                form.hidden = false;
+
+                quantityInput.disabled = true;
+                updateSummary();
+
+            } catch (error) {
+                loading.textContent = error.message;
+                loading.style.color = "#ff9aa6";
+            }
+        }
+
+        initialize();
+    </script>
+</body>
+</html>

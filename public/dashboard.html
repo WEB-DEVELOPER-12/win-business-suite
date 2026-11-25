@@ -4,11 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101d3a">
     <title>Dashboard | WIN Business Suite</title>
 
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/app-pages.css">
     <link rel="stylesheet" href="/css/dashboard-command.css">
+    <link rel="stylesheet" href="/css/notifications.css">
+    <link rel="stylesheet" href="/css/notification-popup.css">
 </head>
 <body class="win-dashboard">
 
@@ -30,8 +33,8 @@
                     <span>⌂</span> Overview
                 </a>
 
-                <a href="#" class="sidebar-link">
-                    <span>▤</span> Sales & POS
+                <a href="/sales.html" class="sidebar-link">
+                    <span>▤</span> Sales &amp; POS
                 </a>
 
                 <a href="/inventory.html" class="sidebar-link">
@@ -42,7 +45,7 @@
                     <span>📒</span> Debtor Management
                 </a>
 
-                <a href="#" class="sidebar-link">
+                <a href="/finance.html" class="sidebar-link">
                     <span>▥</span> Finance
                 </a>
 
@@ -54,8 +57,8 @@
             <div class="sidebar-section sidebar-bottom">
                 <p class="sidebar-label">PREFERENCES</p>
 
-                <a href="/business-settings.html" class="sidebar-link">
-                    <span>⚙</span> Business Settings
+                <a href="/settings.html" class="sidebar-link">
+                    <span>⚙</span> Settings
                 </a>
 
                 <button id="themeToggle" class="sidebar-link theme-toggle">
@@ -76,17 +79,56 @@
         <main class="dashboard-main">
 
             <header class="dashboard-topbar">
-                <div>
+                <div class="topbar-heading">
                     <p class="topbar-label">BUSINESS MANAGEMENT</p>
                     <h2>Dashboard</h2>
                 </div>
 
-                <div class="topbar-user">
-                    <div class="user-avatar">W</div>
-                    <div>
-                        <strong id="userName">Loading...</strong>
-                        <small id="businessName">Your Business</small>
+                <div class="topbar-actions">
+
+                    <!-- CUSTOMER NOTIFICATION BELL -->
+                    <div class="notification-wrapper">
+
+                        <a
+                            href="/notifications.html"
+                            id="notificationBell"
+                            class="notification-bell"
+                            aria-label="Open notifications"
+                            title="Notifications"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+                                <path d="M10 21h4"/>
+                            </svg>
+
+                            <span
+                                id="notificationBadge"
+                                class="notification-badge"
+                                hidden
+                            >0</span>
+                        </a>
+
                     </div>
+                    <!-- END CUSTOMER NOTIFICATION BELL -->
+
+                    <div class="topbar-user">
+                        <div class="user-avatar">W</div>
+                        <div>
+                            <strong id="userName">Loading...</strong>
+                            <small id="businessName">Your Business</small>
+                        </div>
+                    </div>
+
                 </div>
             </header>
 
@@ -94,7 +136,7 @@
                 <div>
                     <p class="eyebrow">YOUR BUSINESS COMMAND CENTRE</p>
                     <h1>Welcome back!</h1>
-                    <p>Everything you need to manage your business, in one place.</p>
+                    <p>Manage your business smarter, all in one place.</p>
                     <h2 id="businessNameWelcome"></h2>
                 </div>
 
@@ -104,134 +146,9 @@
                 </div>
             </section>
 
-            <section class="command-section">
-                <div class="section-heading">
-                    <div>
-                        <p class="eyebrow">GET THINGS DONE</p>
-                        <h2>Quick Actions</h2>
-                    </div>
-                </div>
-
-                <div class="quick-actions-grid">
-                    <a href="#" class="quick-action">
-                        <span>＋</span>
-                        <strong>Record Sale</strong>
-                    </a>
-
-                    <a href="/inventory.html" class="quick-action">
-                        <span>▦</span>
-                        <strong>Add Product</strong>
-                    </a>
-
-                    <a href="#" class="quick-action">
-                        <span>↗</span>
-                        <strong>Record Expense</strong>
-                    </a>
-                </div>
-            </section>
-
-            <section class="command-section">
-                <div class="section-heading">
-                    <div>
-                        <p class="eyebrow">YOUR BUSINESS AT A GLANCE</p>
-                        <h2>Business Overview</h2>
-                    </div>
-                    <span class="overview-period">Overview</span>
-                </div>
-
-                <div class="overview-grid">
-                    <article class="overview-card">
-                        <div class="overview-card-top">
-                            <span class="overview-icon">↗</span>
-                            <small>SALES</small>
-                        </div>
-                        <h3>--</h3>
-                        <p>Sales overview</p>
-                    </article>
-
-                    <article class="overview-card">
-                        <div class="overview-card-top">
-                            <span class="overview-icon">↓</span>
-                            <small>EXPENSES</small>
-                        </div>
-                        <h3>--</h3>
-                        <p>Expense overview</p>
-                    </article>
-
-                    <article class="overview-card">
-                        <div class="overview-card-top">
-                            <span class="overview-icon">◆</span>
-                            <small>PROFIT</small>
-                        </div>
-                        <h3>--</h3>
-                        <p>Profit overview</p>
-                    </article>
-
-                    <article class="overview-card">
-                        <div class="overview-card-top">
-                            <span class="overview-icon">▦</span>
-                            <small>STOCK ITEMS</small>
-                        </div>
-                        <h3>--</h3>
-                        <p>Inventory overview</p>
-                    </article>
-                </div>
-
-                <p class="data-note">
-                    Business statistics will appear here as the relevant modules are connected.
-                </p>
-            </section>
-
-            <section class="command-section">
-                <div class="section-heading">
-                    <div>
-                        <p class="eyebrow">YOUR TOOLS</p>
-                        <h2>Business Modules</h2>
-                        <p>Choose a module to manage that part of your business.</p>
-                    </div>
-                </div>
-
-                <div class="modules-grid">
-
-                    <a href="#" class="module-card">
-                        <span class="module-icon">▤</span>
-                        <h3>Sales & POS</h3>
-                        <p>Record sales and manage transactions.</p>
-                        <span class="module-arrow">Explore →</span>
-                    </a>
-
-                    <a href="/inventory.html" class="module-card">
-                        <span class="module-icon">▦</span>
-                        <h3>Inventory</h3>
-                        <p>Manage products, stock and quantities.</p>
-                        <span class="module-arrow">Explore →</span>
-                    </a>
-
-                    <a href="/debtors.html" class="module-card">
-                        <span class="module-icon">📒</span>
-                        <h3>Debtor Management</h3>
-                        <p>Track credit goods, customer debts, payments and balances.</p>
-                        <span class="module-arrow">Explore →</span>
-                    </a>
-
-                    <a href="#" class="module-card">
-                        <span class="module-icon">▥</span>
-                        <h3>Finance</h3>
-                        <p>Monitor expenses and finances.</p>
-                        <span class="module-arrow">Explore →</span>
-                    </a>
-
-                    <a href="#" class="module-card">
-                        <span class="module-icon">✦</span>
-                        <h3>WIN AI</h3>
-                        <p>Your intelligent business assistant.</p>
-                        <span class="module-arrow">Explore →</span>
-                    </a>
-
-                </div>
-            </section>
-
+            <!-- SUBSCRIPTION CARD -->
             <section class="win-subscription-card" id="subscriptionCard">
+
                 <div class="subscription-header">
                     <div>
                         <p class="eyebrow">YOUR SUBSCRIPTION</p>
@@ -255,10 +172,11 @@
                 <div class="subscription-footer">
                     <div>
                         <p class="subscription-pricing">
-                            KSh 700 <span>/ month</span>
+                            KSh 1,000 <span>/ month</span>
                         </p>
+
                         <p class="subscription-pricing">
-                            KSh 7,000 <span>/ year</span>
+                            KSh 10,000 <span>/ year</span>
                         </p>
                     </div>
 
@@ -268,7 +186,261 @@
                 </div>
 
                 <p id="subscriptionNotice" class="subscription-notice"></p>
+
             </section>
+            <!-- END SUBSCRIPTION CARD -->
+
+            <section class="command-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">GET THINGS DONE</p>
+                        <h2>Quick Actions</h2>
+                    </div>
+                </div>
+
+                <div class="quick-actions-grid">
+
+                    <a href="/sales.html" class="quick-action">
+                        <span>＋</span>
+                        <strong>Record Sale</strong>
+                    </a>
+
+                    <a href="/inventory.html" class="quick-action">
+                        <span>▦</span>
+                        <strong>Add Product</strong>
+                    </a>
+
+                    <a href="/expenses.html" class="quick-action">
+                        <span>↗</span>
+                        <strong>Record Expense</strong>
+                    </a>
+
+                </div>
+            </section>
+
+            <!-- BUSINESS OVERVIEW -->
+            <section class="command-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">YOUR BUSINESS AT A GLANCE</p>
+                        <h2>Business Overview</h2>
+                    </div>
+
+                    <span class="overview-period" id="overviewPeriod">
+                        Today's Overview
+                    </span>
+                </div>
+
+                <div class="overview-grid">
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">↗</span>
+                            <small>SALES</small>
+                        </div>
+                        <h3 id="overviewSales">Loading...</h3>
+                        <p id="overviewSalesLabel">Today's sales revenue</p>
+                    </article>
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">↓</span>
+                            <small>EXPENSES</small>
+                        </div>
+                        <h3 id="overviewExpenses">Loading...</h3>
+                        <p id="overviewExpensesLabel">Today's active expenses</p>
+                    </article>
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">◆</span>
+                            <small>PROFIT</small>
+                        </div>
+                        <h3 id="overviewProfit">Loading...</h3>
+                        <p id="overviewProfitLabel">Today's net profit or loss</p>
+                    </article>
+
+                    <article class="overview-card">
+                        <div class="overview-card-top">
+                            <span class="overview-icon">▦</span>
+                            <small>STOCK ITEMS</small>
+                        </div>
+                        <h3 id="overviewStock">Loading...</h3>
+                        <p id="overviewStockLabel">Products in inventory</p>
+                    </article>
+
+                </div>
+
+                <p class="data-note" id="overviewStatus" aria-live="polite">
+                    Loading your business figures...
+                </p>
+            </section>
+            <!-- END BUSINESS OVERVIEW -->
+
+            <!-- HOW TO USE WIN BUSINESS SUITE -->
+            <section class="command-section how-to-section">
+
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">YOUR STEP-BY-STEP GUIDE</p>
+                        <h2>How to Use WIN Business Suite</h2>
+                        <p>
+                            Follow these simple steps to set up your business
+                            and manage your daily activities.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="how-to-list">
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">01</div>
+                        <div class="how-to-content">
+                            <h3>Set Up Your Business</h3>
+                            <p>
+                                Start by entering your business information,
+                                including its name and other important details.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                Enter your shop name, business type and contact details.
+                            </p>
+                            <a href="/business-settings.html" class="how-to-link">
+                                Set up your business →
+                            </a>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">02</div>
+                        <div class="how-to-content">
+                            <h3>Add Your Products to Inventory</h3>
+                            <p>
+                                Open Inventory and add the products your business sells.
+                                Enter each product's name and the required product details.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                Add sugar, cooking oil, rice or any product your shop sells.
+                            </p>
+                            <a href="/inventory.html" class="how-to-link">
+                                Open Inventory →
+                            </a>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">03</div>
+                        <div class="how-to-content">
+                            <h3>Set Buying and Selling Prices</h3>
+                            <p>
+                                Enter how much you pay to obtain each product
+                                and how much you charge your customers.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                If you buy a product for KSh 80 and sell it for
+                                KSh 100, enter KSh 80 as the buying price and
+                                KSh 100 as the selling price.
+                            </p>
+                            <a href="/inventory.html" class="how-to-link">
+                                Set product prices →
+                            </a>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">04</div>
+                        <div class="how-to-content">
+                            <h3>Enter Product Quantities</h3>
+                            <p>
+                                Record how many units of each product are
+                                currently available. Set a minimum stock level
+                                to help identify products that need attention.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                Enter 50 units as the available quantity and
+                                5 units as the minimum stock level.
+                            </p>
+                            <a href="/inventory.html" class="how-to-link">
+                                Manage quantities →
+                            </a>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">05</div>
+                        <div class="how-to-content">
+                            <h3>Record Your Sales</h3>
+                            <p>
+                                Use Sales &amp; POS whenever a customer buys
+                                something. Select the product, enter the
+                                quantity and record the payment.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                A customer buys 2 products at KSh 100 each.
+                                Record the sale and the amount received.
+                            </p>
+                            <a href="/sales.html" class="how-to-link">
+                                Open Sales &amp; POS →
+                            </a>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">06</div>
+                        <div class="how-to-content">
+                            <h3>Track Your Business Expenses</h3>
+                            <p>
+                                Record money spent on running your business
+                                so that you can understand your costs.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                Record rent, electricity, transport or other
+                                business expenses.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">07</div>
+                        <div class="how-to-content">
+                            <h3>Understand Your Business Overview</h3>
+                            <p>
+                                Use the figures on your Dashboard to follow
+                                your sales, profit, expenses and inventory value.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Tip:</strong>
+                                Check your figures regularly to understand
+                                how your business is performing.
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="how-to-card">
+                        <div class="how-to-number">08</div>
+                        <div class="how-to-content">
+                            <h3>Use WIN AI</h3>
+                            <p>
+                                WIN AI is intended to help you understand
+                                your business information and make smarter
+                                business decisions.
+                            </p>
+                            <p class="how-to-example">
+                                <strong>Example:</strong>
+                                Ask for help understanding business performance
+                                or identifying areas that need attention.
+                            </p>
+                        </div>
+                    </article>
+
+                </div>
+            </section>
+            <!-- END HOW TO USE GUIDE -->
 
             <footer class="dashboard-footer">
                 <p>WIN Business Suite © 2026</p>
@@ -278,20 +450,25 @@
         </main>
     </div>
 
+    <!-- Dashboard and notification scripts -->
     <script src="/js/dashboard.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/notification-popup.js"></script>
 
     <script>
         const themeToggle = document.getElementById("themeToggle");
 
-        themeToggle.addEventListener("click", () => {
-            document.body.classList.toggle("light-mode");
+        if (themeToggle) {
+            themeToggle.addEventListener("click", () => {
+                document.body.classList.toggle("light-mode");
 
-            const mode = document.body.classList.contains("light-mode")
-                ? "light"
-                : "dark";
+                const mode = document.body.classList.contains("light-mode")
+                    ? "light"
+                    : "dark";
 
-            localStorage.setItem("winTheme", mode);
-        });
+                localStorage.setItem("winTheme", mode);
+            });
+        }
 
         if (localStorage.getItem("winTheme") === "light") {
             document.body.classList.add("light-mode");

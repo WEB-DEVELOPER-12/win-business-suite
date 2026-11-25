@@ -1,0 +1,661 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Overview | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --navy: #071b35;
+            --navy-light: #102d50;
+            --cyan: #12bde0;
+            --background: #f3f7fb;
+            --text: #172b45;
+            --muted: #718096;
+            --white: #ffffff;
+            --border: #e5edf5;
+            --green: #159b69;
+            --red: #dc5555;
+            --shadow: 0 5px 20px rgba(7, 27, 53, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--navy);
+            color: var(--white);
+            padding: 17px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .brand span {
+            color: var(--cyan);
+        }
+
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            background: var(--navy-light);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            background: var(--cyan);
+            color: var(--navy);
+        }
+
+        .container {
+            max-width: 1120px;
+            width: 90%;
+            margin: 35px auto;
+        }
+
+        .heading {
+            margin-bottom: 25px;
+        }
+
+        .heading h1 {
+            color: var(--navy);
+            font-size: 29px;
+            margin-bottom: 8px;
+        }
+
+        .heading p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .panel {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+        }
+
+        .panel h2 {
+            color: var(--navy);
+            font-size: 18px;
+            margin-bottom: 17px;
+        }
+
+        .period-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .field input {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--white);
+        }
+
+        button {
+            min-height: 42px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .primary-button {
+            background: var(--navy);
+            color: var(--white);
+        }
+
+        .primary-button:hover {
+            background: #123c68;
+        }
+
+        .secondary-button {
+            background: #e8faff;
+            color: #087e9a;
+            border: 1px solid #c9f0f8;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 19px;
+            box-shadow: var(--shadow);
+            min-height: 120px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 13px;
+        }
+
+        .summary-value {
+            color: var(--navy);
+            font-size: 23px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .summary-value.positive {
+            color: var(--green);
+        }
+
+        .summary-value.negative {
+            color: var(--red);
+        }
+
+        .summary-note {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .statement-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 15px 3px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .statement-row:last-child {
+            border-bottom: none;
+        }
+
+        .statement-row strong {
+            color: var(--navy);
+            text-align: right;
+        }
+
+        .statement-row.total {
+            background: #f3f9fc;
+            margin-top: 8px;
+            padding: 16px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+        }
+
+        .statement-row.net {
+            background: var(--navy);
+            color: var(--white);
+            margin-top: 12px;
+            padding: 18px 13px;
+            border-radius: 9px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .statement-row.net strong {
+            color: var(--white);
+        }
+
+        .statement-row.net.positive strong {
+            color: #6de0ae;
+        }
+
+        .statement-row.net.negative strong {
+            color: #ff9d9d;
+        }
+
+        .status-message {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .status-message.loading {
+            display: block;
+            color: var(--muted);
+            background: var(--white);
+            border: 1px solid var(--border);
+        }
+
+        .status-message.error {
+            display: block;
+            color: #9d3030;
+            background: #fff0f0;
+            border: 1px solid #f3d1d1;
+        }
+
+        .status-message.success {
+            display: block;
+            color: #126b4c;
+            background: #eaf8f1;
+            border: 1px solid #c9ead9;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 35px 15px 25px;
+        }
+
+        @media (max-width: 850px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .period-controls {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .topbar {
+                padding: 15px 5%;
+            }
+
+            .brand {
+                font-size: 16px;
+            }
+
+            .back-link {
+                padding: 9px 11px;
+                font-size: 12px;
+            }
+
+            .container {
+                width: 92%;
+                margin: 25px auto;
+            }
+
+            .heading h1 {
+                font-size: 25px;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+
+            .period-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                gap: 10px;
+            }
+
+            .summary-card {
+                padding: 14px;
+                min-height: 105px;
+            }
+
+            .summary-value {
+                font-size: 19px;
+            }
+
+            .statement-row {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div class="brand">WIN <span>Business Suite</span></div>
+    <a href="/finance.html" class="back-link">← Finance Centre</a>
+</header>
+
+<main class="container">
+
+    <section class="heading">
+        <h1>Finance Overview</h1>
+        <p>
+            Understand your business financial position, income,
+            expenses and profitability in one place.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>Financial Period</h2>
+
+        <div class="period-controls">
+            <div class="field">
+                <label for="startDate">From</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="field">
+                <label for="endDate">To</label>
+                <input type="date" id="endDate">
+            </div>
+
+            <button class="primary-button" id="generateButton" type="button">
+                Generate Summary
+            </button>
+
+            <button class="secondary-button" id="todayButton" type="button">
+                Today
+            </button>
+        </div>
+    </section>
+
+    <div id="reportStatus" class="status-message"></div>
+
+    <section>
+        <h2 style="color:var(--navy);font-size:19px;margin-bottom:15px;">
+            Financial Summary
+        </h2>
+
+        <div class="summary-grid">
+
+            <div class="summary-card">
+                <div class="summary-label">Sales Revenue</div>
+                <div class="summary-value" id="salesRevenue">KSh 0</div>
+                <div class="summary-note">Recorded sales revenue</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Gross Profit</div>
+                <div class="summary-value" id="grossProfit">KSh 0</div>
+                <div class="summary-note">After cost of goods sold</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Other Income</div>
+                <div class="summary-value positive" id="otherIncome">KSh 0</div>
+                <div class="summary-note">Income outside Sales & POS</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Expenses</div>
+                <div class="summary-value" id="expenses">KSh 0</div>
+                <div class="summary-note">Active recorded expenses</div>
+            </div>
+
+        </div>
+
+        <div class="summary-card" style="margin-bottom:25px;">
+            <div class="summary-label">Net Profit / Loss</div>
+            <div class="summary-value" id="netProfit">KSh 0</div>
+            <div class="summary-note">
+                Gross profit + other income − active expenses
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Profit & Loss Statement</h2>
+
+        <div class="statement-row">
+            <span>Sales Revenue</span>
+            <strong id="statementSales">KSh 0</strong>
+        </div>
+
+        <div class="statement-row">
+            <span>Less: Cost of Goods Sold</span>
+            <strong id="statementCost">KSh 0</strong>
+        </div>
+
+        <div class="statement-row total">
+            <span>Gross Profit</span>
+            <strong id="statementGross">KSh 0</strong>
+        </div>
+
+        <div class="statement-row">
+            <span>Add: Other Income</span>
+            <strong id="statementIncome">KSh 0</strong>
+        </div>
+
+        <div class="statement-row total">
+            <span>Total Income</span>
+            <strong id="statementTotalIncome">KSh 0</strong>
+        </div>
+
+        <div class="statement-row">
+            <span>Less: Active Expenses</span>
+            <strong id="statementExpenses">KSh 0</strong>
+        </div>
+
+        <div class="statement-row net" id="netStatementRow">
+            <span>Net Profit / Loss</span>
+            <strong id="statementNet">KSh 0</strong>
+        </div>
+    </section>
+
+</main>
+
+<footer class="footer">
+    © 2026 WIN Business Suite. All rights reserved.
+</footer>
+
+<script>
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+    const generateButton = document.getElementById("generateButton");
+    const todayButton = document.getElementById("todayButton");
+    const reportStatus = document.getElementById("reportStatus");
+
+    function getKenyaDate() {
+        const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Africa/Nairobi",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).formatToParts(new Date());
+
+        const values = {};
+
+        parts.forEach(part => {
+            values[part.type] = part.value;
+        });
+
+        return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function formatMoney(amount) {
+        return new Intl.NumberFormat("en-KE", {
+            style: "currency",
+            currency: "KES",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(Number(amount) || 0);
+    }
+
+    function setMoney(id, amount) {
+        document.getElementById(id).textContent = formatMoney(amount);
+    }
+
+    function setStatus(type, message) {
+        reportStatus.className = "status-message";
+
+        if (type) {
+            reportStatus.classList.add(type);
+        }
+
+        reportStatus.textContent = message || "";
+    }
+
+    function updateProfitStyle(amount) {
+        const value = Number(amount) || 0;
+        const summary = document.getElementById("netProfit");
+        const statement = document.getElementById("netStatementRow");
+
+        summary.classList.remove("positive", "negative");
+        statement.classList.remove("positive", "negative");
+
+        if (value < 0) {
+            summary.classList.add("negative");
+            statement.classList.add("negative");
+        } else {
+            summary.classList.add("positive");
+            statement.classList.add("positive");
+        }
+    }
+
+    async function loadFinanceOverview() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!startDate || !endDate) {
+            setStatus("error", "Please select both report dates.");
+            return;
+        }
+
+        if (startDate > endDate) {
+            setStatus("error", "The From date cannot be later than the To date.");
+            return;
+        }
+
+        generateButton.disabled = true;
+        todayButton.disabled = true;
+
+        setStatus("loading", "Loading your financial summary...");
+
+        try {
+            const query = new URLSearchParams({
+                start_date: startDate,
+                end_date: endDate
+            });
+
+            const response = await fetch(
+                `/api/finance/profit-loss?${query.toString()}`,
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success || !data.report) {
+                throw new Error(
+                    data.message || "Unable to load financial information."
+                );
+            }
+
+            const report = data.report;
+
+            const sales = Number(report.sales_revenue) || 0;
+            const cost = Number(report.cost_of_goods) || 0;
+            const gross = Number(report.gross_profit) || 0;
+            const income = Number(report.other_income) || 0;
+            const totalIncome = Number(report.total_income) || (gross + income);
+            const expenses = Number(report.expenses) || 0;
+            const net = Number(report.net_profit) || 0;
+
+            setMoney("salesRevenue", sales);
+            setMoney("grossProfit", gross);
+            setMoney("otherIncome", income);
+            setMoney("expenses", expenses);
+            setMoney("netProfit", net);
+
+            setMoney("statementSales", sales);
+            setMoney("statementCost", cost);
+            setMoney("statementGross", gross);
+            setMoney("statementIncome", income);
+            setMoney("statementTotalIncome", totalIncome);
+            setMoney("statementExpenses", expenses);
+            setMoney("statementNet", net);
+
+            updateProfitStyle(net);
+
+            setStatus(
+                "success",
+                `Financial summary loaded for ${startDate} to ${endDate}.`
+            );
+
+        } catch (error) {
+            console.error("Finance overview error:", error);
+
+            setStatus(
+                "error",
+                error.message || "Could not load financial information."
+            );
+
+        } finally {
+            generateButton.disabled = false;
+            todayButton.disabled = false;
+        }
+    }
+
+    function loadToday() {
+        const today = getKenyaDate();
+
+        startDateInput.value = today;
+        endDateInput.value = today;
+
+        loadFinanceOverview();
+    }
+
+    generateButton.addEventListener("click", loadFinanceOverview);
+    todayButton.addEventListener("click", loadToday);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const today = getKenyaDate();
+
+        startDateInput.value = today;
+        endDateInput.value = today;
+
+        loadFinanceOverview();
+    });
+</script>
+
+</body>
+</html>

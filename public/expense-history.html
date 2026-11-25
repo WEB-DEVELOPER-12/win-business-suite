@@ -1,0 +1,1109 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071426">
+    <title>Expense History | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --background: #071426;
+            --card: #0d1d32;
+            --card-light: #122640;
+            --border: #203852;
+            --text: #f4f8ff;
+            --muted: #9aacc2;
+            --cyan: #20b8ed;
+            --cyan-dark: #087fa9;
+            --green: #27d69a;
+            --red: #ff626f;
+            --yellow: #f5c451;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--background);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        button, input, select {
+            font: inherit;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 3px;
+        }
+
+        header {
+            min-height: 68px;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid var(--border);
+            background: #09182b;
+        }
+
+        .brand {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: .2px;
+        }
+
+        .brand span {
+            color: var(--cyan);
+        }
+
+        a {
+            color: var(--cyan);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        main {
+            width: 92%;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+
+        .page-heading {
+            margin-bottom: 22px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--cyan);
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .page-heading h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+        }
+
+        .page-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .summary-card,
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+        }
+
+        .summary-card {
+            padding: 19px;
+            min-width: 0;
+        }
+
+        .summary-card p {
+            color: var(--muted);
+            margin: 0 0 10px;
+            font-size: 13px;
+        }
+
+        .summary-card h2 {
+            margin: 0 0 7px;
+            font-size: 23px;
+            overflow-wrap: anywhere;
+        }
+
+        .summary-card small {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .green {
+            color: var(--green);
+        }
+
+        .red {
+            color: var(--red);
+        }
+
+        .cyan {
+            color: var(--cyan);
+        }
+
+        .panel {
+            padding: 21px;
+            margin-bottom: 20px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-heading h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #081629;
+            color: var(--text);
+            outline: none;
+            font-size: 14px;
+        }
+
+        input::placeholder {
+            color: #71849b;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--cyan);
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: opacity .15s ease, background .15s ease;
+        }
+
+        button:hover:not(:disabled) {
+            opacity: .88;
+        }
+
+        button:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .primary-button {
+            background: var(--cyan);
+            color: #041523;
+        }
+
+        .secondary-button {
+            background: var(--card-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .refresh-button {
+            background: #103d59;
+            color: #d8f5ff;
+            border: 1px solid #176187;
+        }
+
+        .view-button {
+            background: #103d59;
+            color: #8ee4ff;
+            padding: 8px 12px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+            background: #10243b;
+            white-space: nowrap;
+        }
+
+        td {
+            color: #e7eff9;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #11243a;
+        }
+
+        .amount {
+            font-weight: bold;
+            color: var(--red);
+            white-space: nowrap;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            color: var(--green);
+            background: #103a31;
+        }
+
+        .status-voided {
+            color: #ff9ba3;
+            background: #421e2a;
+        }
+
+        .message,
+        .empty-state {
+            padding: 26px 12px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .error {
+            color: var(--red);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .pagination p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 13px;
+        }
+
+        .detail-item {
+            padding: 13px;
+            background: #081629;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-width: 0;
+        }
+
+        .detail-item small {
+            display: block;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+
+        .detail-item strong {
+            display: block;
+            overflow-wrap: anywhere;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .detail-wide {
+            grid-column: 1 / -1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            background: rgba(0, 0, 0, .78);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 620px;
+            margin: 45px auto;
+            padding: 23px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+        }
+
+        .modal-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal-top h2 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .close-button {
+            background: var(--card-light);
+            color: white;
+            font-size: 19px;
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+        }
+
+        .void-info {
+            margin-top: 16px;
+            padding: 14px;
+            background: #351c28;
+            border: 1px solid #633044;
+            border-radius: 8px;
+            color: #ffb3bd;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .void-info p {
+            margin: 5px 0;
+        }
+
+        footer {
+            padding: 25px;
+            text-align: center;
+            color: #8093aa;
+            font-size: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        @media (max-width: 750px) {
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filters {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filters input:first-child {
+                grid-column: 1 / -1;
+            }
+
+            .page-heading h1 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            header {
+                padding: 14px 4%;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            main {
+                width: 94%;
+                margin-top: 22px;
+            }
+
+            .summary-grid,
+            .filters,
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters input:first-child {
+                grid-column: auto;
+            }
+
+            .panel {
+                padding: 14px;
+            }
+
+            .detail-wide {
+                grid-column: auto;
+            }
+
+            .panel-heading {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .filter-actions {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .pagination {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="brand">WIN <span>Business Suite</span></div>
+    <a class="back-link" href="/expenses.html">&larr; Back to Expense Management</a>
+</header>
+
+<main>
+    <section class="page-heading">
+        <p class="eyebrow">Finance Centre</p>
+        <h1>Expense History</h1>
+        <p>Review, search and inspect expenses recorded by your business.</p>
+    </section>
+
+    <section class="summary-grid">
+        <div class="summary-card">
+            <p>Active Expenses on This Page</p>
+            <h2 class="red" id="activeTotal">KSh 0.00</h2>
+            <small>Active records currently displayed</small>
+        </div>
+
+        <div class="summary-card">
+            <p>Voided Expenses on This Page</p>
+            <h2 id="voidedTotal">KSh 0.00</h2>
+            <small>Voided records currently displayed</small>
+        </div>
+
+        <div class="summary-card">
+            <p>Total Records Matching Filters</p>
+            <h2 class="cyan" id="recordCount">0</h2>
+            <small>Includes records on other pages</small>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Search &amp; Filter Expenses</h2>
+        </div>
+
+        <div class="filters">
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search description, category or reference..."
+                aria-label="Search expenses"
+            >
+
+            <select id="statusFilter" aria-label="Filter by status">
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="voided">Voided</option>
+            </select>
+
+            <input type="date" id="startDate" aria-label="Start date">
+            <input type="date" id="endDate" aria-label="End date">
+        </div>
+
+        <div class="filter-actions">
+            <div class="button-group">
+                <button class="primary-button" id="applyFilters">
+                    Apply Filters
+                </button>
+
+                <button class="secondary-button" id="resetFilters">
+                    Reset
+                </button>
+            </div>
+
+            <span id="filterMessage" style="color:#9aacc2;font-size:12px;">
+                Showing all dates
+            </span>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Recorded Expenses</h2>
+
+            <button class="refresh-button" id="refreshButton">
+                &#8635; Refresh
+            </button>
+        </div>
+
+        <div id="loadingMessage" class="message">
+            Loading expense records...
+        </div>
+
+        <div id="errorMessage" class="message error" hidden></div>
+
+        <div class="table-wrap" id="tableContainer" hidden>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="expenseTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="emptyMessage" class="empty-state" hidden>
+            No expenses found for these filters.
+            <br>
+            Try changing your search or date range.
+        </div>
+
+        <div class="pagination" id="pagination" hidden>
+            <p id="pageInformation">Page 1 of 1</p>
+
+            <div class="pagination-buttons">
+                <button class="secondary-button" id="previousPage">
+                    Previous
+                </button>
+
+                <button class="secondary-button" id="nextPage">
+                    Next
+                </button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div class="modal" id="detailsModal" role="dialog"
+     aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+        <div class="modal-top">
+            <h2 id="modalTitle">Expense Details</h2>
+            <button class="close-button" id="closeModal"
+                    aria-label="Close details">&times;</button>
+        </div>
+
+        <div id="detailsContent" class="message">
+            Loading expense details...
+        </div>
+    </div>
+</div>
+
+<footer>
+    &copy; 2026 WIN Business Suite. All rights reserved.
+    <br>
+    Manage Everything. Grow Smarter.
+</footer>
+
+<script>
+    const API_URL = "/api/finance/expenses";
+    const PAGE_SIZE = 25;
+
+    let currentPage = 1;
+    let totalPages = 1;
+
+    const elements = {
+        search: document.getElementById("searchInput"),
+        status: document.getElementById("statusFilter"),
+        start: document.getElementById("startDate"),
+        end: document.getElementById("endDate"),
+        body: document.getElementById("expenseTableBody"),
+        loading: document.getElementById("loadingMessage"),
+        error: document.getElementById("errorMessage"),
+        table: document.getElementById("tableContainer"),
+        empty: document.getElementById("emptyMessage"),
+        pagination: document.getElementById("pagination"),
+        pageInfo: document.getElementById("pageInformation"),
+        filterMessage: document.getElementById("filterMessage"),
+        activeTotal: document.getElementById("activeTotal"),
+        voidedTotal: document.getElementById("voidedTotal"),
+        recordCount: document.getElementById("recordCount"),
+        modal: document.getElementById("detailsModal"),
+        detailsContent: document.getElementById("detailsContent")
+    };
+
+    function money(value) {
+        const amount = Number(value || 0);
+
+        return "KSh " + amount.toLocaleString("en-KE", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function formatDate(value) {
+        if (!value) return "—";
+
+        const parts = String(value).split("-");
+
+        if (parts.length !== 3) return String(value);
+
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function formatDateTime(value) {
+        if (!value) return "—";
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+
+        return new Intl.DateTimeFormat("en-KE", {
+            dateStyle: "medium",
+            timeStyle: "short",
+            timeZone: "Africa/Nairobi"
+        }).format(date);
+    }
+
+    function showMessage(message, isError = false) {
+        elements.loading.hidden = true;
+        elements.error.hidden = !isError;
+        elements.empty.hidden = true;
+        elements.table.hidden = true;
+        elements.pagination.hidden = true;
+
+        if (isError) {
+            elements.error.textContent = message;
+        } else {
+            elements.loading.hidden = false;
+            elements.loading.textContent = message;
+        }
+    }
+
+    function setLoading() {
+        elements.loading.hidden = false;
+        elements.loading.textContent = "Loading expense records...";
+        elements.error.hidden = true;
+        elements.empty.hidden = true;
+        elements.table.hidden = true;
+        elements.pagination.hidden = true;
+    }
+
+    function updateSummary(records, pagination) {
+        const active = records
+            .filter(record => record.status === "active")
+            .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+
+        const voided = records
+            .filter(record => record.status === "voided")
+            .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+
+        elements.activeTotal.textContent = money(active);
+        elements.voidedTotal.textContent = money(voided);
+
+        elements.recordCount.textContent =
+            Number(pagination.total ?? records.length).toLocaleString("en-KE");
+    }
+
+    function createCell(value, className = "") {
+        const cell = document.createElement("td");
+        cell.textContent = value == null || value === "" ? "—" : String(value);
+
+        if (className) {
+            cell.className = className;
+        }
+
+        return cell;
+    }
+
+    function renderRecords(records) {
+        elements.body.replaceChildren();
+
+        records.forEach(record => {
+            const row = document.createElement("tr");
+
+            row.appendChild(createCell(record.description));
+            row.appendChild(createCell(record.category));
+            row.appendChild(createCell(formatDate(record.transaction_date)));
+            row.appendChild(createCell(money(record.amount), "amount"));
+
+            const statusCell = document.createElement("td");
+            const statusBadge = document.createElement("span");
+
+            const isVoided = record.status === "voided";
+
+            statusBadge.className = isVoided
+                ? "status status-voided"
+                : "status status-active";
+
+            statusBadge.textContent = isVoided ? "Voided" : "Active";
+
+            statusCell.appendChild(statusBadge);
+            row.appendChild(statusCell);
+
+            const actionCell = document.createElement("td");
+            const viewButton = document.createElement("button");
+
+            viewButton.className = "view-button";
+            viewButton.textContent = "View";
+            viewButton.type = "button";
+
+            viewButton.addEventListener("click", () => {
+                openExpenseDetails(record.id);
+            });
+
+            actionCell.appendChild(viewButton);
+            row.appendChild(actionCell);
+
+            elements.body.appendChild(row);
+        });
+    }
+
+    function buildFilterParams(page, limit) {
+        const params = new URLSearchParams();
+
+        params.set("page", page);
+        params.set("limit", limit);
+        params.set("status", elements.status.value);
+        params.set("search", elements.search.value.trim());
+
+        // Broad default dates keep the full history available.
+        params.set("start_date", elements.start.value || "2000-01-01");
+        params.set("end_date", elements.end.value || "2099-12-31");
+
+        return params;
+    }
+
+    async function loadExpenses() {
+        setLoading();
+
+        const params = buildFilterParams(currentPage, PAGE_SIZE);
+
+        elements.filterMessage.textContent =
+            elements.start.value || elements.end.value
+                ? "Showing selected date range"
+                : "Showing all dates";
+
+        try {
+            const response = await fetch(
+                `${API_URL}?${params.toString()}`,
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (response.status === 401) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || "Could not load expenses."
+                );
+            }
+
+            const records = Array.isArray(data.records)
+                ? data.records
+                : [];
+
+            const pagination = data.pagination || {};
+
+            totalPages = Math.max(
+                1,
+                Number(pagination.total_pages || 1)
+            );
+
+            updateSummary(records, pagination);
+
+            elements.loading.hidden = true;
+            elements.error.hidden = true;
+
+            if (records.length === 0) {
+                elements.empty.hidden = false;
+                elements.table.hidden = true;
+                elements.pagination.hidden = true;
+                return;
+            }
+
+            renderRecords(records);
+
+            elements.table.hidden = false;
+            elements.empty.hidden = true;
+            elements.pagination.hidden = false;
+
+            elements.pageInfo.textContent =
+                `Page ${pagination.page || currentPage} of ${totalPages}`;
+
+            document.getElementById("previousPage").disabled =
+                currentPage <= 1;
+
+            document.getElementById("nextPage").disabled =
+                currentPage >= totalPages;
+
+        } catch (error) {
+            console.error("Expense history error:", error);
+
+            showMessage(
+                error.message || "Could not load expense history.",
+                true
+            );
+        }
+    }
+
+    function addDetail(grid, label, value, wide = false) {
+        const item = document.createElement("div");
+
+        item.className = wide
+            ? "detail-item detail-wide"
+            : "detail-item";
+
+        const small = document.createElement("small");
+        small.textContent = label;
+
+        const strong = document.createElement("strong");
+        strong.textContent =
+            value == null || value === "" ? "—" : String(value);
+
+        item.appendChild(small);
+        item.appendChild(strong);
+        grid.appendChild(item);
+    }
+
+    async function openExpenseDetails(id) {
+        elements.modal.style.display = "block";
+        elements.detailsContent.className = "message";
+        elements.detailsContent.textContent = "Loading expense details...";
+
+        try {
+            const response = await fetch(
+                `${API_URL}/${encodeURIComponent(id)}`,
+                {
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (response.status === 401) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || "Could not load expense details."
+                );
+            }
+
+            const record = data.record;
+
+            if (!record) {
+                throw new Error("Expense record was not returned.");
+            }
+
+            elements.detailsContent.replaceChildren();
+
+            const grid = document.createElement("div");
+            grid.className = "details-grid";
+
+            addDetail(grid, "Description", record.description, true);
+            addDetail(grid, "Amount", money(record.amount));
+            addDetail(grid, "Category", record.category);
+            addDetail(
+                grid,
+                "Transaction Date",
+                formatDate(record.transaction_date)
+            );
+            addDetail(grid, "Payment Method", record.payment_method);
+            addDetail(grid, "Reference", record.reference);
+            addDetail(grid, "Status", record.status);
+            addDetail(
+                grid,
+                "Created At",
+                formatDateTime(record.created_at),
+                true
+            );
+            addDetail(grid, "Notes", record.notes, true);
+
+            elements.detailsContent.appendChild(grid);
+
+            if (record.status === "voided") {
+                const voidInfo = document.createElement("div");
+                voidInfo.className = "void-info";
+
+                const reason = document.createElement("p");
+                reason.textContent =
+                    "Void reason: " + (record.void_reason || "Not provided");
+
+                const voidDate = document.createElement("p");
+                voidDate.textContent =
+                    "Voided at: " + formatDateTime(record.voided_at);
+
+                voidInfo.appendChild(reason);
+                voidInfo.appendChild(voidDate);
+
+                elements.detailsContent.appendChild(voidInfo);
+            }
+
+        } catch (error) {
+            elements.detailsContent.textContent =
+                error.message || "Could not load expense details.";
+
+            elements.detailsContent.className = "message error";
+        }
+    }
+
+    function closeModal() {
+        elements.modal.style.display = "none";
+    }
+
+    document.getElementById("applyFilters").addEventListener("click", () => {
+        const start = elements.start.value;
+        const end = elements.end.value;
+
+        if (start && end && start > end) {
+            showMessage(
+                "Start date cannot be after the end date.",
+                true
+            );
+            return;
+        }
+
+        currentPage = 1;
+        loadExpenses();
+    });
+
+    document.getElementById("resetFilters").addEventListener("click", () => {
+        elements.search.value = "";
+        elements.status.value = "all";
+        elements.start.value = "";
+        elements.end.value = "";
+
+        currentPage = 1;
+        loadExpenses();
+    });
+
+    document.getElementById("refreshButton").addEventListener("click", () => {
+        loadExpenses();
+    });
+
+    document.getElementById("previousPage").addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            loadExpenses();
+        }
+    });
+
+    document.getElementById("nextPage").addEventListener("click", () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadExpenses();
+        }
+    });
+
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+
+    elements.modal.addEventListener("click", event => {
+        if (event.target === elements.modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && elements.modal.style.display === "block") {
+            closeModal();
+        }
+    });
+
+    elements.search.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            currentPage = 1;
+            loadExpenses();
+        }
+    });
+
+    loadExpenses();
+</script>
+
+</body>
+</html>

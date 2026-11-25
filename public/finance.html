@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Centre | WIN Business Suite</title>
+
+    <style>
+        :root {
+            --navy: #071b35;
+            --navy-light: #102d50;
+            --cyan: #12bde0;
+            --background: #f3f7fb;
+            --text: #172b45;
+            --muted: #718096;
+            --white: #ffffff;
+            --border: #e5edf5;
+            --green: #159b69;
+            --red: #dc5555;
+            --shadow: 0 5px 20px rgba(7, 27, 53, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--navy);
+            color: var(--white);
+            padding: 17px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+
+        .brand span {
+            color: var(--cyan);
+        }
+
+        .dashboard-link {
+            color: var(--white);
+            text-decoration: none;
+            background: var(--navy-light);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .dashboard-link:hover {
+            background: var(--cyan);
+            color: var(--navy);
+        }
+
+        .container {
+            max-width: 1120px;
+            width: 90%;
+            margin: 35px auto;
+        }
+
+        .page-heading {
+            margin-bottom: 30px;
+        }
+
+        .page-heading h1 {
+            font-size: 29px;
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+
+        .page-heading p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .section-heading {
+            font-size: 19px;
+            color: var(--navy);
+            margin-bottom: 17px;
+            font-weight: 750;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 17px;
+            margin-bottom: 38px;
+        }
+
+        .summary-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 21px;
+            box-shadow: var(--shadow);
+            min-height: 125px;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 13px;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            color: var(--navy);
+            font-size: 25px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .summary-value.positive {
+            color: var(--green);
+        }
+
+        .summary-value.negative {
+            color: var(--red);
+        }
+
+        .summary-note {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 9px;
+        }
+
+        .section-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 17px;
+        }
+
+        .section-header-row .section-heading {
+            margin-bottom: 0;
+        }
+
+        .refresh-button {
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--navy);
+            border-radius: 8px;
+            padding: 9px 13px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .refresh-button:hover {
+            border-color: var(--cyan);
+            color: #087e9a;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 19px;
+        }
+
+        .action-card {
+            display: block;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 25px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            min-height: 195px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--cyan);
+            box-shadow: 0 9px 25px rgba(7, 27, 53, 0.10);
+        }
+
+        .action-icon {
+            width: 46px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8faff;
+            color: #0788a5;
+            border-radius: 11px;
+            font-size: 22px;
+            margin-bottom: 17px;
+        }
+
+        .action-card h3 {
+            color: var(--navy);
+            font-size: 17px;
+            margin-bottom: 9px;
+        }
+
+        .action-card p {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .includes {
+            color: #087e9a;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 13px;
+        }
+
+        .card-arrow {
+            display: block;
+            color: #0788a5;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 14px;
+        }
+
+        .status-message {
+            display: none;
+            margin-top: 15px;
+            padding: 11px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .status-message.error {
+            display: block;
+            color: #9d3030;
+            background: #fff0f0;
+            border: 1px solid #f3d1d1;
+        }
+
+        .status-message.loading {
+            display: block;
+            color: var(--muted);
+            background: var(--white);
+            border: 1px solid var(--border);
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 35px 15px 25px;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .topbar {
+                padding: 15px 5%;
+            }
+
+            .brand {
+                font-size: 16px;
+            }
+
+            .dashboard-link {
+                padding: 9px 11px;
+                font-size: 12px;
+            }
+
+            .container {
+                width: 92%;
+                margin: 26px auto;
+            }
+
+            .page-heading h1 {
+                font-size: 25px;
+            }
+
+            .summary-grid {
+                gap: 11px;
+            }
+
+            .summary-card {
+                padding: 15px;
+                min-height: 110px;
+            }
+
+            .summary-value {
+                font-size: 20px;
+            }
+
+            .action-grid {
+                grid-template-columns: 1fr;
+                gap: 13px;
+            }
+
+            .action-card {
+                min-height: auto;
+                padding: 21px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="brand">WIN <span>Business Suite</span></div>
+        <a href="/dashboard.html" class="dashboard-link">
+            ← Dashboard
+        </a>
+    </header>
+
+    <main class="container">
+
+        <section class="page-heading">
+            <h1>Finance Centre</h1>
+            <p>
+                Manage your business income, expenses, financial records
+                and profitability in one place.
+            </p>
+        </section>
+
+        <section>
+            <div class="section-header-row">
+                <h2 class="section-heading">Today's Overview</h2>
+
+                <button class="refresh-button" id="refreshButton"
+                    type="button" onclick="loadFinanceSummary()">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <div class="summary-grid">
+
+                <div class="summary-card">
+                    <div class="summary-label">Sales Revenue</div>
+                    <div class="summary-value" id="salesRevenue">KSh 0</div>
+                    <div class="summary-note">Today's recorded sales</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">Other Income</div>
+                    <div class="summary-value positive" id="otherIncome">KSh 0</div>
+                    <div class="summary-note">Income outside Sales & POS</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">Expenses</div>
+                    <div class="summary-value" id="totalExpenses">KSh 0</div>
+                    <div class="summary-note">Active recorded expenses</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">Net Profit / Loss</div>
+                    <div class="summary-value" id="netProfit">KSh 0</div>
+                    <div class="summary-note">Today's calculated result</div>
+                </div>
+
+            </div>
+
+            <div id="summaryStatus" class="status-message"></div>
+        </section>
+
+        <section>
+            <h2 class="section-heading">Manage Finance</h2>
+
+            <div class="action-grid">
+
+                <a href="/finance-overview.html" class="action-card">
+                    <div class="action-icon">📊</div>
+                    <h3>Finance Overview</h3>
+                    <p>
+                        View your complete financial position, including
+                        sales revenue, cost of goods, gross profit,
+                        other income, expenses and net profit or loss.
+                    </p>
+                    <div class="includes">
+                        Includes: Finance Overview + Profit & Loss
+                    </div>
+                    <span class="card-arrow">Open Financial Overview →</span>
+                </a>
+
+                <a href="/other-income.html" class="action-card">
+                    <div class="action-icon">💰</div>
+                    <h3>Income Management</h3>
+                    <p>
+                        Record, manage and review income received
+                        outside your normal Sales & POS transactions.
+                    </p>
+                    <div class="includes">
+                        Includes: Other Income
+                    </div>
+                    <span class="card-arrow">Manage Income →</span>
+                </a>
+
+                <a href="/expenses.html" class="action-card">
+                    <div class="action-icon">💳</div>
+                    <h3>Expense Management</h3>
+                    <p>
+                        Record business expenses, manage expense
+                        categories and review expense history.
+                    </p>
+                    <div class="includes">
+                        Includes: Expenses + Expense History
+                    </div>
+                    <span class="card-arrow">Manage Expenses →</span>
+                </a>
+
+                <a href="/finance-transactions.html" class="action-card">
+                    <div class="action-icon">🧾</div>
+                    <h3>Financial Records & Reports</h3>
+                    <p>
+                        Review financial reports and transaction history.
+                        Search records, filter dates and check transaction
+                        statuses in one place.
+                    </p>
+                    <div class="includes">
+                        Includes: Financial Reports + Transactions
+                    </div>
+                    <span class="card-arrow">View Financial Records →</span>
+                </a>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        © 2026 WIN Business Suite. All rights reserved.
+    </footer>
+
+    <script>
+        function formatMoney(amount) {
+            return new Intl.NumberFormat("en-KE", {
+                style: "currency",
+                currency: "KES",
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }).format(Number(amount) || 0);
+        }
+
+        function setSummaryValue(id, value) {
+            document.getElementById(id).textContent = formatMoney(value);
+        }
+
+        async function loadFinanceSummary() {
+            const status = document.getElementById("summaryStatus");
+            const refreshButton = document.getElementById("refreshButton");
+
+            status.className = "status-message loading";
+            status.textContent = "Loading today's financial summary...";
+            refreshButton.disabled = true;
+
+            try {
+                const response = await fetch("/api/finance/summary", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Unable to load Finance Summary.");
+                }
+
+                const summary = data.summary;
+
+                setSummaryValue("salesRevenue", summary.sales_revenue);
+                setSummaryValue("otherIncome", summary.other_income);
+                setSummaryValue("totalExpenses", summary.expenses);
+                setSummaryValue("netProfit", summary.net_profit);
+
+                const profitElement = document.getElementById("netProfit");
+                profitElement.classList.remove("positive", "negative");
+                profitElement.classList.add(
+                    Number(summary.net_profit) < 0 ? "negative" : "positive"
+                );
+
+                status.className = "status-message";
+                status.textContent = "";
+
+            } catch (error) {
+                status.className = "status-message error";
+                status.textContent =
+                    error.message || "Could not load financial information.";
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", loadFinanceSummary);
+    </script>
+
+</body>
+</html>

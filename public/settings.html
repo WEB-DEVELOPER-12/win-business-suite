@@ -1,0 +1,994 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07182e">
+
+    <title>Settings | WIN Business Suite</title>
+
+    <link rel="stylesheet" href="/css/app-pages.css">
+    <link rel="stylesheet" href="/css/settings.css">
+</head>
+
+<body class="win-settings-page">
+
+    <div class="settings-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="settings-sidebar">
+
+            <a href="/dashboard.html" class="settings-brand">
+                <span class="settings-brand-icon">W</span>
+                <span>
+                    <strong>WIN</strong>
+                    <small>Business Suite</small>
+                </span>
+            </a>
+
+            <div class="settings-sidebar-heading">
+                ACCOUNT SETTINGS
+            </div>
+
+            <nav class="settings-navigation">
+
+                <button class="settings-nav-item active"
+                    data-settings-page="profile">
+                    <span>01</span>
+                    <span>My Profile</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="business">
+                    <span>02</span>
+                    <span>Business Information</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="appearance">
+                    <span>03</span>
+                    <span>Appearance</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="security">
+                    <span>04</span>
+                    <span>Security & Devices</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="subscription">
+                    <span>05</span>
+                    <span>Subscription & Billing</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="help">
+                    <span>06</span>
+                    <span>Help & Support</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="about">
+                    <span>07</span>
+                    <span>About WIN</span>
+                </button>
+
+                <button class="settings-nav-item"
+                    data-settings-page="data">
+                    <span>08</span>
+                    <span>Data Management</span>
+                </button>
+
+            </nav>
+
+            <div class="settings-sidebar-bottom">
+
+                <a href="/dashboard.html" class="back-dashboard-link">
+                    ← Back to Dashboard
+                </a>
+
+                <button type="button" id="settingsLogoutButton"
+                    class="settings-logout-button">
+                    Log Out
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="settings-main">
+
+            <header class="settings-topbar">
+
+                <div>
+                    <p class="settings-breadcrumb">
+                        WIN BUSINESS SUITE / SETTINGS
+                    </p>
+
+                    <h1>Settings</h1>
+
+                    <p class="settings-top-description">
+                        Manage your account, business and preferences.
+                    </p>
+                </div>
+
+                <a href="/dashboard.html" class="settings-back-button">
+                    Back to Dashboard
+                </a>
+
+            </header>
+
+
+            <div id="settingsMessage"
+                class="settings-message"
+                role="status"
+                aria-live="polite"
+                hidden>
+            </div>
+
+
+            <!-- 01. MY PROFILE -->
+            <section class="settings-section active"
+                id="settings-profile">
+
+                <div class="settings-section-heading">
+                    <span>ACCOUNT</span>
+                    <h2>My Profile</h2>
+                    <p>Manage your personal account information.</p>
+                </div>
+
+                <div class="settings-card">
+
+                    <div class="settings-profile-header">
+
+                        <div class="settings-avatar" id="profileAvatar">
+                            W
+                        </div>
+
+                        <div>
+                            <h3 id="profileDisplayName">
+                                Loading profile...
+                            </h3>
+
+                            <p id="profileDisplayRole">
+                                Account information
+                            </p>
+
+                            <small>
+                                Profile photo upload — Coming Soon
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <form id="profileForm">
+
+                        <div class="settings-form-grid">
+
+                            <div class="settings-field">
+                                <label for="profileFullName">
+                                    Full Name
+                                </label>
+
+                                <input type="text"
+                                    id="profileFullName"
+                                    name="full_name"
+                                    maxlength="100"
+                                    required>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="profileEmail">
+                                    Email Address
+                                </label>
+
+                                <input type="email"
+                                    id="profileEmail"
+                                    name="email"
+                                    maxlength="254"
+                                    required>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="profilePhone">
+                                    Phone Number
+                                </label>
+
+                                <input type="tel"
+                                    id="profilePhone"
+                                    name="phone"
+                                    maxlength="30">
+                            </div>
+
+                            <div class="settings-field">
+                                <label>Account Role</label>
+
+                                <input type="text"
+                                    id="profileRole"
+                                    readonly>
+                            </div>
+
+                        </div>
+
+                        <div class="settings-information">
+                            Account created:
+                            <strong id="profileCreatedAt">
+                                Loading...
+                            </strong>
+                        </div>
+
+                        <button type="submit"
+                            class="settings-primary-button">
+                            Save Profile
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+
+            <!-- 02. BUSINESS INFORMATION -->
+            <section class="settings-section"
+                id="settings-business">
+
+                <div class="settings-section-heading">
+                    <span>YOUR BUSINESS</span>
+                    <h2>Business Information</h2>
+                    <p>
+                        Manage the official information of your business.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+
+                    <div class="settings-logo-area">
+
+                        <div class="settings-business-logo">
+                            WIN
+                        </div>
+
+                        <div>
+                            <h3>Business Logo</h3>
+                            <p>Business logo upload — Coming Soon</p>
+                        </div>
+
+                    </div>
+
+                    <form id="businessSettingsForm">
+
+                        <div class="settings-form-grid">
+
+                            <div class="settings-field">
+                                <label for="businessName">
+                                    Business Name
+                                </label>
+
+                                <input type="text"
+                                    id="businessName"
+                                    name="business_name"
+                                    required>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessType">
+                                    Business Type
+                                </label>
+
+                                <input type="text"
+                                    id="businessType"
+                                    name="business_type">
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessEmail">
+                                    Business Email
+                                </label>
+
+                                <input type="email"
+                                    id="businessEmail"
+                                    name="business_email">
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessPhone">
+                                    Business Phone
+                                </label>
+
+                                <input type="tel"
+                                    id="businessPhone"
+                                    name="business_phone">
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessCountry">
+                                    Country
+                                </label>
+
+                                <input type="text"
+                                    id="businessCountry"
+                                    name="country">
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessCurrency">
+                                    Business Currency
+                                </label>
+
+                                <select id="businessCurrency"
+                                    name="currency">
+
+                                    <option value="KES">
+                                        KES — Kenyan Shilling
+                                    </option>
+
+                                    <option value="USD">
+                                        USD — US Dollar
+                                    </option>
+
+                                    <option value="UGX">
+                                        UGX — Ugandan Shilling
+                                    </option>
+
+                                    <option value="TZS">
+                                        TZS — Tanzanian Shilling
+                                    </option>
+
+                                    <option value="ETB">
+                                        ETB — Ethiopian Birr
+                                    </option>
+
+                                    <option value="SOS">
+                                        SOS — Somali Shilling
+                                    </option>
+
+                                    <option value="EUR">
+                                        EUR — Euro
+                                    </option>
+
+                                    <option value="GBP">
+                                        GBP — British Pound
+                                    </option>
+
+                                </select>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessAddress">
+                                    Business Address
+                                </label>
+
+                                <input type="text"
+                                    id="businessAddress"
+                                    name="address">
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="businessRegistration">
+                                    Registration Number
+                                </label>
+
+                                <input type="text"
+                                    id="businessRegistration"
+                                    name="registration_number">
+                            </div>
+
+                        </div>
+
+                        <button type="submit"
+                            class="settings-primary-button">
+                            Save Business Information
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+
+            <!-- 03. APPEARANCE -->
+            <section class="settings-section"
+                id="settings-appearance">
+
+                <div class="settings-section-heading">
+                    <span>PERSONALIZATION</span>
+                    <h2>Appearance</h2>
+                    <p>
+                        Choose how WIN Business Suite looks on your device.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+
+                    <h3>Choose Your Theme</h3>
+
+                    <div class="settings-theme-options">
+
+                        <label class="theme-option">
+
+                            <input type="radio"
+                                name="theme"
+                                value="dark">
+
+                            <span class="theme-preview dark-preview">
+                                <span></span>
+                                <strong>Dark Mode</strong>
+                            </span>
+
+                        </label>
+
+                        <label class="theme-option">
+
+                            <input type="radio"
+                                name="theme"
+                                value="light">
+
+                            <span class="theme-preview light-preview">
+                                <span></span>
+                                <strong>Light Mode</strong>
+                            </span>
+
+                        </label>
+
+                        <label class="theme-option">
+
+                            <input type="radio"
+                                name="theme"
+                                value="system">
+
+                            <span class="theme-preview system-preview">
+                                <span></span>
+                                <strong>System Default</strong>
+                            </span>
+
+                        </label>
+
+                    </div>
+
+                    <button type="button"
+                        id="saveThemeButton"
+                        class="settings-primary-button">
+                        Apply Theme
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- 04. SECURITY -->
+            <section class="settings-section"
+                id="settings-security">
+
+                <div class="settings-section-heading">
+                    <span>ACCOUNT PROTECTION</span>
+                    <h2>Security & Devices</h2>
+                    <p>
+                        Protect your account and manage account security.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+
+                    <h3>Change Password</h3>
+
+                    <form id="passwordForm">
+
+                        <div class="settings-form-grid">
+
+                            <div class="settings-field full-width">
+                                <label for="currentPassword">
+                                    Current Password
+                                </label>
+
+                                <input type="password"
+                                    id="currentPassword"
+                                    name="current_password"
+                                    autocomplete="current-password"
+                                    required>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="newPassword">
+                                    New Password
+                                </label>
+
+                                <input type="password"
+                                    id="newPassword"
+                                    name="new_password"
+                                    minlength="12"
+                                    maxlength="128"
+                                    autocomplete="new-password"
+                                    required>
+                            </div>
+
+                            <div class="settings-field">
+                                <label for="confirmPassword">
+                                    Confirm New Password
+                                </label>
+
+                                <input type="password"
+                                    id="confirmPassword"
+                                    minlength="12"
+                                    maxlength="128"
+                                    autocomplete="new-password"
+                                    required>
+                            </div>
+
+                        </div>
+
+                        <p class="settings-help-text">
+                            Use 12–128 characters for your new password.
+                        </p>
+
+                        <button type="submit"
+                            class="settings-primary-button">
+                            Change Password
+                        </button>
+
+                    </form>
+
+                </div>
+
+                <div class="settings-card">
+
+                    <h3>Devices & Sessions</h3>
+
+                    <div class="settings-coming-soon">
+
+                        <strong>Coming Soon</strong>
+
+                        <p>
+                            Active device management, login history
+                            and remote logout are not yet available.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- 05. SUBSCRIPTION -->
+            <section class="settings-section"
+                id="settings-subscription">
+
+                <div class="settings-section-heading">
+                    <span>YOUR PLAN</span>
+                    <h2>Subscription & Billing</h2>
+                    <p>
+                        View your plan and manage your subscription.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+
+                    <div id="subscriptionInformation">
+                        <p>Loading subscription information...</p>
+                    </div>
+
+                    <div class="settings-plan-grid">
+
+                        <div class="settings-plan-card">
+                            <h3>WIN Pro Monthly</h3>
+                            <strong>KSh 1,000</strong>
+                            <p>Per month</p>
+                        </div>
+
+                        <div class="settings-plan-card">
+                            <h3>WIN Pro Yearly</h3>
+                            <strong>KSh 10,000</strong>
+                            <p>Per year — Save KSh 2,000</p>
+                        </div>
+
+                    </div>
+
+                    <p class="settings-help-text">
+                        M-Pesa and card payments — Coming Soon.
+                    </p>
+
+                    <p>
+                        Upgrade assistance is available through
+                        WhatsApp.
+                    </p>
+
+                    <div class="settings-information">
+                        Payment history will appear here when available.
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- 06. HELP & SUPPORT -->
+            <section class="settings-section"
+                id="settings-help">
+
+                <div class="settings-section-heading">
+                    <span>WE ARE HERE TO HELP</span>
+                    <h2>Help & Support</h2>
+                    <p>
+                        Learn how to use WIN and find answers.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+
+                    <div class="settings-help-item">
+                        <div>
+                            <h3>WhatsApp Support</h3>
+                            <p>Get assistance through WhatsApp.</p>
+                        </div>
+
+                        <span class="settings-status">
+                            Support Channel
+                        </span>
+                    </div>
+
+                    <div class="settings-help-item">
+                        <div>
+                            <h3>How to Use WIN</h3>
+                            <p>
+                                Learn how to use the different features.
+                            </p>
+                        </div>
+
+                        <a href="/dashboard.html">View Guide</a>
+                    </div>
+
+                    <div class="settings-help-item">
+                        <div>
+                            <h3>Frequently Asked Questions</h3>
+                            <p>
+                                Find answers to common questions.
+                            </p>
+                        </div>
+
+                        <span class="settings-status">Planned</span>
+                    </div>
+
+                    <div class="settings-help-item">
+                        <div>
+                            <h3>Report a Problem</h3>
+                            <p>
+                                Tell us about a problem with WIN.
+                            </p>
+                        </div>
+
+                        <span class="settings-status">Planned</span>
+                    </div>
+
+                    <div class="settings-help-item">
+                        <div>
+                            <h3>Troubleshooting</h3>
+                            <p>
+                                Find solutions to common problems.
+                            </p>
+                        </div>
+
+                        <span class="settings-status">Planned</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- 07. ABOUT WIN -->
+            <section class="settings-section"
+                id="settings-about">
+
+                <div class="settings-section-heading">
+                    <span>ABOUT THE PRODUCT</span>
+                    <h2>About WIN</h2>
+                    <p>
+                        Learn about WIN Business Suite and the company behind it.
+                    </p>
+                </div>
+
+                <div class="settings-card">
+
+                    <div class="settings-about-brand">
+
+                        <img
+                            src="/images/winbusinesssuitelogo.jpeg"
+                            alt="WIN Business Suite logo"
+                            style="display:block; width:min(100%, 220px); max-height:150px; object-fit:contain; margin:0 auto 18px;">
+
+                        <h2>WIN Business Suite</h2>
+
+                        <p>Manage Everything. Grow Smarter.</p>
+
+                        <p>
+                            <strong>
+                                A product of Bori Technologies Group
+                            </strong>
+                        </p>
+
+                    </div>
+
+                    <div class="settings-information">
+
+                        <h3>About WIN Business Suite</h3>
+
+                        <p>
+                            WIN Business Suite is a business management platform
+                            designed to help businesses manage their daily operations,
+                            monitor performance, organize records and make smarter
+                            business decisions.
+                        </p>
+
+                    </div>
+
+                    <div class="settings-information">
+
+                        <h3>Our Mission</h3>
+
+                        <p>
+                            To empower businesses across Africa with accessible,
+                            reliable and intelligent digital management tools that
+                            support growth and productivity.
+                        </p>
+
+                    </div>
+
+                    <div class="settings-information">
+
+                        <h3>Company & Contact Information</h3>
+
+                        <p>
+                            <strong>Company:</strong>
+                            Bori Technologies Group
+                        </p>
+
+                        <p>
+                            <strong>Country:</strong>
+                            Kenya
+                        </p>
+
+                        <p>
+                            <strong>Email:</strong>
+
+                            <a href="mailto:winbusinesssuite@gmail.com">
+                                winbusinesssuite@gmail.com
+                            </a>
+                        </p>
+
+                        <p>
+                            <strong>Website:</strong>
+                            Coming Soon
+                        </p>
+
+                        <p>
+                            <strong>WhatsApp:</strong>
+
+                            <a
+                                href="https://wa.me/254788819909?text=Hello%20WIN%20Business%20Suite%20Support%2C%20I%20need%20assistance."
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                Contact WhatsApp Support
+                            </a>
+                        </p>
+
+                    </div>
+
+                    <div class="settings-information">
+
+                        <h3>Application Information</h3>
+
+                        <p>Version: Information coming soon</p>
+
+                        <p>Terms and Conditions: Planned</p>
+
+                        <p>Privacy Policy: Planned</p>
+
+                    </div>
+
+                    <p class="settings-copyright">
+                        © 2026 WIN Business Suite. All rights reserved.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- 08. DATA MANAGEMENT -->
+            <section class="settings-section"
+                id="settings-data">
+
+                <div class="settings-section-heading">
+                    <span>YOUR BUSINESS DATA</span>
+                    <h2>Data Management</h2>
+                    <p>
+                        Monitor your business data, check storage,
+                        export records and manage backups.
+                    </p>
+                </div>
+
+                <!-- SERVER CONNECTION -->
+                <div class="settings-card">
+
+                    <h3>Server Connection</h3>
+
+                    <div class="settings-data-item">
+
+                        <div>
+                            <h3>WIN Server</h3>
+
+                            <p id="dataServerDescription">
+                                Checking your server connection...
+                            </p>
+                        </div>
+
+                        <span class="settings-status"
+                            id="dataServerStatus">
+                            Checking...
+                        </span>
+
+                    </div>
+
+                    <button type="button"
+                        id="refreshDataStatusButton"
+                        class="settings-primary-button">
+                        Refresh Connection
+                    </button>
+
+                    <p class="settings-help-text">
+                        Connection status checks the current WIN server.
+                        It does not mean your account is hosted on a cloud
+                        platform or automatically backed up.
+                    </p>
+
+                </div>
+
+
+                <!-- STORAGE USAGE -->
+                <div class="settings-card">
+
+                    <h3>Storage Usage</h3>
+
+                    <div class="settings-data-item">
+
+                        <div>
+                            <h3>Business Database Storage</h3>
+
+                            <p id="dataStorageDescription">
+                                Waiting for storage measurement...
+                            </p>
+                        </div>
+
+                        <span class="settings-status"
+                            id="dataStorageStatus">
+                            Checking...
+                        </span>
+
+                    </div>
+
+                    <div class="settings-information"
+                        id="dataStorageDetails">
+                        Storage information will appear here.
+                    </div>
+
+                    <button type="button"
+                        id="refreshStorageButton"
+                        class="settings-secondary-button">
+                        Refresh Storage Information
+                    </button>
+
+                </div>
+
+
+                <!-- DATA EXPORT -->
+                <div class="settings-card">
+
+                    <h3>Data Export</h3>
+
+                    <p class="settings-help-text">
+                        Create a business-specific export of supported
+                        records. Export files should be stored securely.
+                    </p>
+
+                    <div class="settings-information">
+
+                        <strong>Export format: JSON</strong>
+
+                        <p>
+                            JSON exports preserve structured business
+                            records and can be used for data review.
+                        </p>
+
+                    </div>
+
+                    <button type="button"
+                        id="exportBusinessDataButton"
+                        class="settings-primary-button">
+                        Export My Business Data
+                    </button>
+
+                    <p class="settings-help-text"
+                        id="dataExportMessage"
+                        aria-live="polite">
+                    </p>
+
+                </div>
+
+
+                <!-- BACKUPS -->
+                <div class="settings-card">
+
+                    <h3>Backups & Recovery</h3>
+
+                    <p class="settings-help-text">
+                        Create a separate business-data backup and review
+                        the backups available to your account.
+                    </p>
+
+                    <button type="button"
+                        id="createBusinessBackupButton"
+                        class="settings-primary-button">
+                        Create Business Backup
+                    </button>
+
+                    <div class="settings-information">
+
+                        <h3>Available Backups</h3>
+
+                        <p id="backupListDescription">
+                            Backup information has not been loaded yet.
+                        </p>
+
+                        <div id="businessBackupList"
+                            aria-live="polite">
+                        </div>
+
+                        <button type="button"
+                            id="refreshBackupListButton"
+                            class="settings-secondary-button">
+                            Refresh Backup List
+                        </button>
+
+                    </div>
+
+                    <div class="settings-coming-soon">
+
+                        <strong>Restore & Recovery — Coming Soon</strong>
+
+                        <p>
+                            Restoring a backup requires additional
+                            validation and recovery safeguards. It is
+                            not available yet.
+                        </p>
+
+                    </div>
+
+                    <p class="settings-help-text"
+                        id="backupManagementMessage"
+                        aria-live="polite">
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <footer class="settings-footer">
+                WIN Business Suite · Manage Everything. Grow Smarter.
+            </footer>
+
+        </main>
+
+    </div>
+
+    <script src="/js/settings.js"></script>
+
+</body>
+</html>

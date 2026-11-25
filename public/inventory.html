@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory | WIN Business Suite</title>
+
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/app-pages.css">
 
     <style>
         .inventory-container {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 35px auto;
             padding: 20px;
         }
@@ -50,18 +51,25 @@
         }
 
         .inventory-stat strong {
-            font-size: 27px;
+            font-size: 23px;
             color: #0f172a;
+            overflow-wrap: anywhere;
         }
 
         .inventory-panel {
             margin-bottom: 25px;
         }
 
+        .inventory-panel > p {
+            color: #64748b;
+            margin-top: 6px;
+        }
+
         .inventory-form {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 15px;
+            margin-top: 18px;
         }
 
         .inventory-form label {
@@ -93,12 +101,13 @@
 
         .inventory-table-wrap {
             overflow-x: auto;
+            margin-top: 15px;
         }
 
         .inventory-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 760px;
         }
 
         .inventory-table th,
@@ -111,6 +120,7 @@
         .inventory-table th {
             background: #f1f5f9;
             color: #334155;
+            white-space: nowrap;
         }
 
         .category-group-row td {
@@ -132,14 +142,17 @@
 
         .inventory-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .inventory-actions button {
-            padding: 7px 10px;
+            padding: 7px 9px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
+            font: inherit;
+            font-size: 12px;
         }
 
         .edit-button {
@@ -163,6 +176,26 @@
             padding: 30px;
         }
 
+        .inventory-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 14px;
+            font-size: 14px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .inventory-small-text {
+            font-size: 13px;
+            color: #64748b;
+        }
+
         @media (max-width: 600px) {
             .inventory-form {
                 grid-template-columns: 1fr;
@@ -170,6 +203,14 @@
 
             .form-full {
                 grid-column: auto;
+            }
+
+            .inventory-container {
+                padding: 12px;
+            }
+
+            .inventory-stat strong {
+                font-size: 21px;
             }
         }
     </style>
@@ -179,6 +220,7 @@
 
 <header class="navbar">
     <a href="/dashboard.html" class="logo">WIN BUSINESS SUITE</a>
+
     <div class="nav-actions">
         <span id="userName">Loading...</span>
         <button id="logoutButton" class="btn-secondary">Log Out</button>
@@ -200,7 +242,9 @@
         </a>
     </div>
 
+    <!-- INVENTORY SUMMARY -->
     <section class="inventory-stats">
+
         <div class="inventory-stat">
             <h3>Total Products</h3>
             <strong id="totalProducts">0</strong>
@@ -215,9 +259,24 @@
             <h3>Low Stock Products</h3>
             <strong id="lowStockProducts">0</strong>
         </div>
+
+        <div class="inventory-stat">
+            <h3>Stock Cost Value</h3>
+            <strong id="stockCostValue">KSh 0.00</strong>
+            <p class="inventory-small-text">Based on buying prices</p>
+        </div>
+
+        <div class="inventory-stat">
+            <h3>Potential Sales Value</h3>
+            <strong id="potentialSalesValue">KSh 0.00</strong>
+            <p class="inventory-small-text">Based on selling prices</p>
+        </div>
+
     </section>
 
+    <!-- ADD AND EDIT PRODUCT -->
     <section class="inventory-panel">
+
         <h2 id="formTitle">Add New Product</h2>
         <p>Enter your product information below.</p>
 
@@ -225,8 +284,13 @@
 
             <div class="form-full">
                 <label for="product_name">Product Name *</label>
-                <input type="text" id="product_name" maxlength="150"
-                       placeholder="Enter product name" required>
+                <input
+                    type="text"
+                    id="product_name"
+                    maxlength="150"
+                    placeholder="Enter product name"
+                    required
+                >
             </div>
 
             <div class="form-full">
@@ -238,42 +302,79 @@
 
             <div class="form-full">
                 <label for="description">Description</label>
-                <textarea id="description"
-                          placeholder="Optional product description"></textarea>
+                <textarea
+                    id="description"
+                    placeholder="Optional product description"
+                ></textarea>
             </div>
 
             <div>
                 <label for="selling_price">Selling Price (KES) *</label>
-                <input type="number" id="selling_price"
-                       min="0" step="0.01" required>
+                <input
+                    type="number"
+                    id="selling_price"
+                    min="0"
+                    step="0.01"
+                    required
+                >
             </div>
 
             <div>
                 <label for="buying_price">Buying Price (KES)</label>
-                <input type="number" id="buying_price"
-                       min="0" step="0.01" value="0">
+                <input
+                    type="number"
+                    id="buying_price"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                >
             </div>
 
             <div>
-                <label for="stock_quantity">Stock Quantity *</label>
-                <input type="number" id="stock_quantity"
-                       min="0" step="0.01" value="0" required>
+                <label for="stock_quantity" id="stockQuantityLabel">
+                    Opening Stock Quantity *
+                </label>
+
+                <input
+                    type="number"
+                    id="stock_quantity"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    required
+                >
+
+                <p class="inventory-small-text" id="stockQuantityHelp">
+                    Enter the starting quantity available for this product.
+                </p>
             </div>
 
             <div>
                 <label for="low_stock_level">Low Stock Alert Level</label>
-                <input type="number" id="low_stock_level"
-                       min="0" step="0.01" value="5">
+                <input
+                    type="number"
+                    id="low_stock_level"
+                    min="0"
+                    step="0.01"
+                    value="5"
+                >
             </div>
 
             <div class="form-full">
-                <button type="submit" id="saveProductButton"
-                        class="btn-primary">
+                <button
+                    type="submit"
+                    id="saveProductButton"
+                    class="btn-primary"
+                >
                     Add Product
                 </button>
 
-                <button type="button" id="cancelEditButton"
-                        class="btn-secondary" hidden>
+                <button
+                    type="button"
+                    id="cancelEditButton"
+                    class="btn-secondary"
+                    hidden
+                >
                     Cancel Edit
                 </button>
 
@@ -281,19 +382,33 @@
             </div>
 
         </form>
+
+        <div class="inventory-note">
+            Use Edit Product to update the current quantity directly.
+            Stock is automatically reduced when sales and debtor credit
+            transactions are recorded.
+        </div>
+
     </section>
 
+    <!-- PRODUCT INVENTORY -->
     <section class="inventory-panel">
+
         <h2>Product Inventory</h2>
         <p>View and manage your products, organised by category.</p>
 
-        <input type="search" id="productSearch"
-               class="inventory-search"
-               placeholder="Search products..."
-               style="margin: 15px 0;">
+        <input
+            type="search"
+            id="productSearch"
+            class="inventory-search"
+            placeholder="Search products..."
+            style="margin: 15px 0;"
+        >
 
         <div class="inventory-table-wrap">
+
             <table class="inventory-table">
+
                 <thead>
                     <tr>
                         <th>Product</th>
@@ -312,10 +427,13 @@
                         </td>
                     </tr>
                 </tbody>
+
             </table>
+
         </div>
 
         <p id="tableMessage" class="inventory-message"></p>
+
     </section>
 
     <footer class="dashboard-footer">
