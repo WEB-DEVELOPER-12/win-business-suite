@@ -1,31 +1,19 @@
+﻿"use strict";
 
-const db = require("../config/database");
+const db = require("../config/postgresRouteDatabase");
 
-function run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (error) {
-            if (error) return reject(error);
-            resolve({ lastID: this.lastID, changes: this.changes });
-        });
-    });
+async function run(sql, params = []) {
+    return db.query(sql, params);
 }
 
-function get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (error, row) => {
-            if (error) return reject(error);
-            resolve(row);
-        });
-    });
+async function get(sql, params = []) {
+    const result = await db.query(sql, params);
+    return result.rows[0] || null;
 }
 
-function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (error, rows) => {
-            if (error) return reject(error);
-            resolve(rows);
-        });
-    });
+async function all(sql, params = []) {
+    const result = await db.query(sql, params);
+    return result.rows;
 }
 
 function kenyaDateParts(date = new Date()) {
@@ -53,7 +41,9 @@ function kenyaDateParts(date = new Date()) {
 
 function addDays(dateString, amount) {
     const [year, month, day] = dateString.split("-").map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day + amount));
+    const date = new Date(
+        Date.UTC(year, month - 1, day + amount)
+    );
 
     return [
         date.getUTCFullYear(),
@@ -63,7 +53,9 @@ function addDays(dateString, amount) {
 }
 
 function addMonths(year, month, amount) {
-    const date = new Date(Date.UTC(year, month - 1 + amount, 1));
+    const date = new Date(
+        Date.UTC(year, month - 1 + amount, 1)
+    );
 
     return {
         year: date.getUTCFullYear(),
@@ -76,7 +68,9 @@ function roundMoney(value) {
 }
 
 function signedBalance(debt, payments) {
-    return roundMoney(Number(debt || 0) - Number(payments || 0));
+    return roundMoney(
+        Number(debt || 0) - Number(payments || 0)
+    );
 }
 
 function getMonthStart(year, month) {
@@ -92,7 +86,7 @@ async function getCustomerIds(businessId) {
     return all(
         `SELECT id
          FROM customers
-         WHERE business_id = ?
+         WHERE business_id = $1
          ORDER BY id`,
         [businessId]
     );
@@ -104,15 +98,17 @@ async function getFirstActivityDate(businessId, customerId) {
          FROM (
              SELECT transaction_date AS activity_date
              FROM debtor_transactions
-             WHERE business_id = ? AND customer_id = ?
+             WHERE business_id = $1
+               AND customer_id = $2
 
              UNION ALL
 
              SELECT payment_date AS activity_date
              FROM debtor_payments
-             WHERE business_id = ? AND customer_id = ?
-         )`,
-        [businessId, customerId, businessId, customerId]
+             WHERE business_id = $1
+               AND customer_id = $2
+         ) AS activities`,
+        [businessId, customerId]
     );
 
     return row?.first_date || null;
@@ -129,25 +125,21 @@ async function getTotalsBetween(
             COALESCE((
                 SELECT SUM(total_amount)
                 FROM debtor_transactions
-                WHERE business_id = ?
-                  AND customer_id = ?
-                  AND transaction_date >= ?
-                  AND transaction_date < ?
+                WHERE business_id = $1
+                  AND customer_id = $2
+                  AND transaction_date >= $3
+                  AND transaction_date < $4
             ), 0) AS debt_added,
 
             COALESCE((
                 SELECT SUM(amount)
                 FROM debtor_payments
-                WHERE business_id = ?
-                  AND customer_id = ?
-                  AND payment_date >= ?
-                  AND payment_date < ?
+                WHERE business_id = $1
+                  AND customer_id = $2
+                  AND payment_date >= $3
+                  AND payment_date < $4
             ), 0) AS payments_received`,
         [
-            businessId,
-            customerId,
-            startDate,
-            endDate,
             businessId,
             customerId,
             startDate,
@@ -171,22 +163,19 @@ async function getBalanceBefore(
             COALESCE((
                 SELECT SUM(total_amount)
                 FROM debtor_transactions
-                WHERE business_id = ?
-                  AND customer_id = ?
-                  AND transaction_date < ?
+                WHERE business_id = $1
+                  AND customer_id = $2
+                  AND transaction_date < $3
             ), 0) AS total_debt,
 
             COALESCE((
                 SELECT SUM(amount)
                 FROM debtor_payments
-                WHERE business_id = ?
-                  AND customer_id = ?
-                  AND payment_date < ?
+                WHERE business_id = $1
+                  AND customer_id = $2
+                  AND payment_date < $3
             ), 0) AS total_paid`,
         [
-            businessId,
-            customerId,
-            beforeDate,
             businessId,
             customerId,
             beforeDate
@@ -208,7 +197,11 @@ async function saveDailyNotebook(
     const nextDate = addDays(date, 1);
 
     const [openingBalance, totals] = await Promise.all([
-        getBalanceBefore(businessId, customerId, date),
+        getBalanceBefore(
+            businessId,
+            customerId,
+            date
+        ),
         getTotalsBetween(
             businessId,
             customerId,
@@ -236,17 +229,17 @@ async function saveDailyNotebook(
             status,
             closed_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 
         ON CONFLICT (business_id, customer_id, notebook_date)
         DO UPDATE SET
-            opening_balance = excluded.opening_balance,
-            debt_added = excluded.debt_added,
-            payments_received = excluded.payments_received,
-            closing_balance = excluded.closing_balance,
-            status = excluded.status,
+            opening_balance = EXCLUDED.opening_balance,
+            debt_added = EXCLUDED.debt_added,
+            payments_received = EXCLUDED.payments_received,
+            closing_balance = EXCLUDED.closing_balance,
+            status = EXCLUDED.status,
             closed_at = CASE
-                WHEN excluded.status = 'closed'
+                WHEN EXCLUDED.status = 'closed'
                 THEN COALESCE(
                     debtor_daily_notebooks.closed_at,
                     CURRENT_TIMESTAMP
@@ -264,7 +257,9 @@ async function saveDailyNotebook(
             totals.paymentsReceived,
             closingBalance,
             status,
-            status === "closed" ? new Date().toISOString() : null
+            status === "closed"
+                ? new Date().toISOString()
+                : null
         ]
     );
 }
@@ -280,7 +275,11 @@ async function saveMonthlyNotebook(
     const endDate = getNextMonthStart(year, month);
 
     const [openingBalance, totals] = await Promise.all([
-        getBalanceBefore(businessId, customerId, startDate),
+        getBalanceBefore(
+            businessId,
+            customerId,
+            startDate
+        ),
         getTotalsBetween(
             businessId,
             customerId,
@@ -313,17 +312,17 @@ async function saveMonthlyNotebook(
             status,
             closed_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 
         ON CONFLICT (business_id, customer_id, year, month)
         DO UPDATE SET
-            opening_balance = excluded.opening_balance,
-            debt_added = excluded.debt_added,
-            payments_received = excluded.payments_received,
-            closing_balance = excluded.closing_balance,
-            status = excluded.status,
+            opening_balance = EXCLUDED.opening_balance,
+            debt_added = EXCLUDED.debt_added,
+            payments_received = EXCLUDED.payments_received,
+            closing_balance = EXCLUDED.closing_balance,
+            status = EXCLUDED.status,
             closed_at = CASE
-                WHEN excluded.status = 'closed'
+                WHEN EXCLUDED.status = 'closed'
                 THEN COALESCE(
                     debtor_monthly_notebooks.closed_at,
                     CURRENT_TIMESTAMP
@@ -342,105 +341,130 @@ async function saveMonthlyNotebook(
             totals.paymentsReceived,
             closingBalance,
             status,
-            status === "closed" ? new Date().toISOString() : null
+            status === "closed"
+                ? new Date().toISOString()
+                : null
         ]
     );
 }
 
-async function rebuildCustomerNotebooks(
+/*
+ * Close previously open daily notebooks.
+ * Closed historical notebooks are never recalculated here.
+ */
+async function closePreviousDailyNotebooks(
     businessId,
     customerId,
     today
 ) {
-    const firstDate = await getFirstActivityDate(
+    await run(
+        `UPDATE debtor_daily_notebooks
+         SET
+            status = 'closed',
+            closed_at = COALESCE(
+                closed_at,
+                CURRENT_TIMESTAMP
+            )
+         WHERE business_id = $1
+           AND customer_id = $2
+           AND notebook_date < $3
+           AND status = 'open'`,
+        [
+            businessId,
+            customerId,
+            today
+        ]
+    );
+}
+
+/*
+ * Close previous monthly notebooks.
+ */
+async function closePreviousMonthlyNotebooks(
+    businessId,
+    customerId,
+    today
+) {
+    await run(
+        `UPDATE debtor_monthly_notebooks
+         SET
+            status = 'closed',
+            closed_at = COALESCE(
+                closed_at,
+                CURRENT_TIMESTAMP
+            )
+         WHERE business_id = $1
+           AND customer_id = $2
+           AND (
+                year < $3
+                OR (year = $4 AND month < $5)
+           )
+           AND status = 'open'`,
+        [
+            businessId,
+            customerId,
+            today.year,
+            today.year,
+            today.month
+        ]
+    );
+}
+
+/*
+ * Update only the current daily and monthly notebooks.
+ * This avoids rebuilding the customer's entire history
+ * every time their profile or debtor list is opened.
+ */
+async function syncCustomerCurrentNotebooks(
+    businessId,
+    customerId,
+    today
+) {
+    await closePreviousDailyNotebooks(
+        businessId,
+        customerId,
+        today.date
+    );
+
+    await closePreviousMonthlyNotebooks(
+        businessId,
+        customerId,
+        today
+    );
+
+    await saveDailyNotebook(
+        businessId,
+        customerId,
+        today.date,
+        today.date
+    );
+
+    const firstActivityDate = await getFirstActivityDate(
         businessId,
         customerId
     );
 
-    // Include transaction dates, payment dates, previously
-    // created daily notebooks, and today's date.
-    // This ensures old empty notebooks are also closed.
-    const dailyDates = await all(
-        `SELECT transaction_date AS notebook_date
-         FROM debtor_transactions
-         WHERE business_id = ? AND customer_id = ?
-
-         UNION
-
-         SELECT payment_date AS notebook_date
-         FROM debtor_payments
-         WHERE business_id = ? AND customer_id = ?
-
-         UNION
-
-         SELECT notebook_date
-         FROM debtor_daily_notebooks
-         WHERE business_id = ? AND customer_id = ?
-
-         ORDER BY notebook_date`,
-        [
-            businessId,
-            customerId,
-            businessId,
-            customerId,
-            businessId,
-            customerId
-        ]
-    );
-
-    const dates = new Set(
-        dailyDates.map(row => row.notebook_date)
-    );
-
-    dates.add(today.date);
-
-    for (const date of [...dates].sort()) {
-        await saveDailyNotebook(
-            businessId,
-            customerId,
-            date,
-            today.date
-        );
-    }
-
-    // Customers without credit activity still get their daily
-    // notebooks processed, but monthly history starts when
-    // their first credit activity occurs.
-    if (!firstDate) return;
-
-    const [firstYear, firstMonth] = firstDate
-        .split("-")
-        .slice(0, 2)
-        .map(Number);
-
-    let period = {
-        year: firstYear,
-        month: firstMonth
-    };
-
-    while (
-        period.year < today.year ||
-        (
-            period.year === today.year &&
-            period.month <= today.month
-        )
-    ) {
+    if (firstActivityDate) {
         await saveMonthlyNotebook(
             businessId,
             customerId,
-            period.year,
-            period.month,
+            today.year,
+            today.month,
             today
         );
-
-        period = addMonths(
-            period.year,
-            period.month,
-            1
-        );
     }
+
+    return {
+        success: true,
+        today: today.date
+    };
 }
 
+/*
+ * Used when the business debtor list loads.
+ * Processes current notebooks without rebuilding all
+ * historical daily and monthly records.
+ */
 async function ensureBusinessNotebooks(businessId) {
     const id = Number(businessId);
 
@@ -452,7 +476,7 @@ async function ensureBusinessNotebooks(businessId) {
     const customers = await getCustomerIds(id);
 
     for (const customer of customers) {
-        await rebuildCustomerNotebooks(
+        await syncCustomerCurrentNotebooks(
             id,
             customer.id,
             today
@@ -466,7 +490,13 @@ async function ensureBusinessNotebooks(businessId) {
     };
 }
 
-async function ensureCustomerNotebooks(businessId, customerId) {
+/*
+ * Used before customer credit transactions and payments.
+ */
+async function ensureCustomerNotebooks(
+    businessId,
+    customerId
+) {
     const business = Number(businessId);
     const customer = Number(customerId);
 
@@ -481,9 +511,21 @@ async function ensureCustomerNotebooks(businessId, customerId) {
         );
     }
 
+    const customerExists = await get(
+        `SELECT id
+         FROM customers
+         WHERE id = $1
+           AND business_id = $2`,
+        [customer, business]
+    );
+
+    if (!customerExists) {
+        throw new Error("Customer not found in this business.");
+    }
+
     const today = kenyaDateParts();
 
-    await rebuildCustomerNotebooks(
+    await syncCustomerCurrentNotebooks(
         business,
         customer,
         today
