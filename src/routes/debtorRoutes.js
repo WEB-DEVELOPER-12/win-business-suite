@@ -1,17 +1,26 @@
 
+"use strict";
+
 const express = require("express");
 const crypto = require("crypto");
-const db = require("../config/database");
+const db = require("../config/postgresRouteDatabase");
 const requireAuth = require("../middleware/requireAuth");
+
 const {
     ensureBusinessNotebooks,
     ensureCustomerNotebooks,
-    kenyaDateParts
+    kenyaDateParts,
+    addDays,
+    getMonthStart,
+    getNextMonthStart,
+    getTotalsBetween,
+    getBalanceBefore
 } = require("../services/debtorNotebookService");
 
 const router = express.Router();
 
 router.use(requireAuth);
+router.use(db.middleware);
 
 function validId(value) {
     const id = Number(value);
@@ -23,18 +32,23 @@ function cleanText(value, maxLength = 255) {
     return value.trim().slice(0, maxLength);
 }
 
+function roundMoney(value) {
+    return Number((Number(value) || 0).toFixed(2));
+}
+
 function validCreditLimit(value) {
     const amount = Number(value);
+
     return Number.isFinite(amount) &&
         amount >= 0 &&
         amount <= 1000000000000;
 }
 
 function calculateDebtorStatus(totalDebtValue, totalPaidValue) {
-    const totalDebt = Number(totalDebtValue) || 0;
-    const totalPaid = Number(totalPaidValue) || 0;
+    const totalDebt = roundMoney(totalDebtValue);
+    const totalPaid = roundMoney(totalPaidValue);
 
-    const netBalance = totalDebt - totalPaid;
+    const netBalance = roundMoney(totalDebt - totalPaid);
     const balance = Math.max(0, netBalance);
     const customerCredit = Math.max(0, -netBalance);
 
@@ -57,11 +71,12 @@ function calculateDebtorStatus(totalDebtValue, totalPaidValue) {
         total_paid: totalPaid,
         balance,
         customer_credit: customerCredit,
+        net_balance: netBalance,
         status
     };
 }
 
-function parsePaymentDate(value) {
+function parseDate(value) {
     if (
         typeof value !== "string" ||
         !/^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -80,13 +95,47 @@ function parsePaymentDate(value) {
         return null;
     }
 
-    return { date: value, year, month };
+    return {
+        date: value,
+        year,
+        month,
+        day
+    };
+}
+
+function parseYear(value) {
+    const year = Number(value);
+
+    if (
+        !Number.isInteger(year) ||
+        year < 2000 ||
+        year > 9999
+    ) {
+        return null;
+    }
+
+    return year;
+}
+
+function parseMonth(value) {
+    const month = Number(value);
+
+    if (
+        !Number.isInteger(month) ||
+        month < 1 ||
+        month > 12
+    ) {
+        return null;
+    }
+
+    return month;
 }
 
 function run(sql, params = []) {
     return new Promise((resolve, reject) => {
         db.run(sql, params, function (error) {
             if (error) return reject(error);
+
             resolve({
                 lastID: this.lastID,
                 changes: this.changes
@@ -113,13 +162,224 @@ function all(sql, params = []) {
     });
 }
 
+async function getDebtor(businessId, debtorId) {
+    return get(
+        `SELECT *
+         FROM customers
+         WHERE id = ?
+           AND business_id = ?`,
+        [debtorId, businessId]
+    );
+}
+
+async function getDebtorForUpdate(businessId, debtorId) {
+    return get(
+        `SELECT *
+         FROM customers
+         WHERE id = ?
+           AND business_id = ?
+         FOR UPDATE`,
+        [debtorId, businessId]
+    );
+}
+
+async function getDebtorBalances(businessId, debtorId) {
+    return get(
+        `SELECT
+            COALESCE((
+                SELECT SUM(total_amount)
+                FROM debtor_transactions
+                WHERE customer_id = ?
+                  AND business_id = ?
+            ), 0) AS total_debt,
+
+            COALESCE((
+                SELECT SUM(amount)
+                FROM debtor_payments
+                WHERE customer_id = ?
+                  AND business_id = ?
+            ), 0) AS total_paid`,
+        [
+            debtorId,
+            businessId,
+            debtorId,
+            businessId
+        ]
+    );
+}
+
+async function getNotebookStatus(
+    businessId,
+    debtorId,
+    date,
+    year,
+    month
+) {
+    const [daily, monthly] = await Promise.all([
+        get(
+            `SELECT *
+             FROM debtor_daily_notebooks
+             WHERE business_id = ?
+               AND customer_id = ?
+               AND notebook_date = ?`,
+            [businessId, debtorId, date]
+        ),
+        get(
+            `SELECT *
+             FROM debtor_monthly_notebooks
+             WHERE business_id = ?
+               AND customer_id = ?
+               AND year = ?
+               AND month = ?`,
+            [businessId, debtorId, year, month]
+        )
+    ]);
+
+    return { daily, monthly };
+}
+
+async function getDailySnapshot(businessId, debtorId, date) {
+    const nextDate = addDays(date, 1);
+
+    const [openingBalance, totals] = await Promise.all([
+        getBalanceBefore(businessId, debtorId, date),
+        getTotalsBetween(
+            businessId,
+            debtorId,
+            date,
+            nextDate
+        )
+    ]);
+
+    const closingBalance = roundMoney(
+        openingBalance +
+        totals.debtAdded -
+        totals.paymentsReceived
+    );
+
+    const today = kenyaDateParts().date;
+
+    return {
+        notebook_date: date,
+        opening_balance: roundMoney(openingBalance),
+        debt_added: totals.debtAdded,
+        payments_received: totals.paymentsReceived,
+        closing_balance: closingBalance,
+        balance: Math.max(0, closingBalance),
+        customer_credit: Math.max(0, -closingBalance),
+        status: date < today ? "closed" : "open"
+    };
+}
+
+async function getMonthlySnapshot(
+    businessId,
+    debtorId,
+    year,
+    month
+) {
+    const startDate = getMonthStart(year, month);
+    const endDate = getNextMonthStart(year, month);
+
+    const [openingBalance, totals] = await Promise.all([
+        getBalanceBefore(
+            businessId,
+            debtorId,
+            startDate
+        ),
+        getTotalsBetween(
+            businessId,
+            debtorId,
+            startDate,
+            endDate
+        )
+    ]);
+
+    const closingBalance = roundMoney(
+        openingBalance +
+        totals.debtAdded -
+        totals.paymentsReceived
+    );
+
+    const today = kenyaDateParts();
+
+    const isCurrentMonth =
+        year === today.year &&
+        month === today.month;
+
+    return {
+        year,
+        month,
+        period_start: startDate,
+        period_end: endDate,
+        opening_balance: roundMoney(openingBalance),
+        debt_added: totals.debtAdded,
+        payments_received: totals.paymentsReceived,
+        closing_balance: closingBalance,
+        balance: Math.max(0, closingBalance),
+        customer_credit: Math.max(0, -closingBalance),
+        status: isCurrentMonth ? "open" : "closed"
+    };
+}
+
+function getReportRange(period, query) {
+    const today = kenyaDateParts();
+
+    if (period === "daily") {
+        const selectedDate = query.date
+            ? parseDate(query.date)
+            : parseDate(today.date);
+
+        if (!selectedDate) return null;
+
+        return {
+            startDate: selectedDate.date,
+            endDate: addDays(selectedDate.date, 1),
+            label: selectedDate.date,
+            year: selectedDate.year,
+            month: selectedDate.month
+        };
+    }
+
+    if (period === "monthly") {
+        const year = parseYear(query.year || today.year);
+        const month = parseMonth(query.month || today.month);
+
+        if (!year || !month) return null;
+
+        return {
+            startDate: getMonthStart(year, month),
+            endDate: getNextMonthStart(year, month),
+            label: `${year}-${String(month).padStart(2, "0")}`,
+            year,
+            month
+        };
+    }
+
+    if (period === "yearly") {
+        const year = parseYear(query.year || today.year);
+
+        if (!year) return null;
+
+        return {
+            startDate: `${year}-01-01`,
+            endDate: `${year + 1}-01-01`,
+            label: String(year),
+            year
+        };
+    }
+
+    return null;
+}
+
+// ======================================================
 // GET ALL DEBTORS
+// ======================================================
+
 router.get("/", async (req, res) => {
     const businessId = req.session.user.business_id;
     const search = cleanText(req.query.search, 100);
 
     try {
-        // Catch up expired notebooks for this business.
         await ensureBusinessNotebooks(businessId);
 
         const debtors = await all(
@@ -150,11 +410,15 @@ router.get("/", async (req, res) => {
              FROM customers c
              WHERE c.business_id = ?
                AND (
-                    c.full_name LIKE ?
-                    OR COALESCE(c.phone, '') LIKE ?
+                    c.full_name ILIKE ?
+                    OR COALESCE(c.phone, '') ILIKE ?
                )
-             ORDER BY c.full_name COLLATE NOCASE ASC`,
-            [businessId, `%${search}%`, `%${search}%`]
+             ORDER BY LOWER(c.full_name) ASC`,
+            [
+                businessId,
+                `%${search}%`,
+                `%${search}%`
+            ]
         );
 
         res.json({
@@ -169,6 +433,7 @@ router.get("/", async (req, res) => {
         });
     } catch (error) {
         console.error("Load debtors error:", error.message);
+
         res.status(500).json({
             success: false,
             message: "Could not load debtors."
@@ -176,8 +441,11 @@ router.get("/", async (req, res) => {
     }
 });
 
+// ======================================================
 // CREATE DEBTOR
-router.post("/", (req, res) => {
+// ======================================================
+
+router.post("/", async (req, res) => {
     const businessId = req.session.user.business_id;
 
     const fullName = cleanText(req.body.full_name, 150);
@@ -216,45 +484,48 @@ router.post("/", (req, res) => {
         });
     }
 
-    db.run(
-        `INSERT INTO customers (
-            business_id,
-            full_name,
-            phone,
-            email,
-            address,
-            notes,
-            credit_limit,
-            credit_enabled
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
-        [
-            businessId,
-            fullName,
-            phone || null,
-            email || null,
-            address || null,
-            notes || null,
-            creditLimit
-        ],
-        function (error) {
-            if (error) {
-                console.error("Create debtor error:", error.message);
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not register debtor."
-                });
-            }
+    try {
+        const result = await run(
+            `INSERT INTO customers (
+                business_id,
+                full_name,
+                phone,
+                email,
+                address,
+                notes,
+                credit_limit,
+                credit_enabled
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+            [
+                businessId,
+                fullName,
+                phone || null,
+                email || null,
+                address || null,
+                notes || null,
+                creditLimit
+            ]
+        );
 
-            res.status(201).json({
-                success: true,
-                message: "Debtor registered successfully.",
-                debtor_id: this.lastID
-            });
-        }
-    );
+        res.status(201).json({
+            success: true,
+            message: "Debtor registered successfully.",
+            debtor_id: result.lastID
+        });
+    } catch (error) {
+        console.error("Create debtor error:", error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "Could not register debtor."
+        });
+    }
 });
 
+// ======================================================
 // RECORD GOODS TAKEN ON CREDIT
+// ======================================================
+
 router.post("/:id/transactions", async (req, res) => {
     const businessId = req.session.user.business_id;
     const userId = req.session.user.id;
@@ -270,7 +541,11 @@ router.post("/:id/transactions", async (req, res) => {
     const items = req.body.items;
     const notes = cleanText(req.body.notes, 1000);
 
-    if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
+    if (
+        !Array.isArray(items) ||
+        items.length === 0 ||
+        items.length > 100
+    ) {
         return res.status(400).json({
             success: false,
             message: "Add between 1 and 100 product items."
@@ -306,10 +581,14 @@ router.post("/:id/transactions", async (req, res) => {
         }
 
         seenProductIds.add(productId);
-        requestedItems.push({ productId, quantity });
+
+        requestedItems.push({
+            productId,
+            quantity
+        });
     }
 
-    const { date, year, month } = kenyaDateParts();
+    const today = kenyaDateParts();
 
     const transactionNumber =
         `DBT-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
@@ -317,23 +596,21 @@ router.post("/:id/transactions", async (req, res) => {
     let transactionStarted = false;
 
     try {
-        // Close expired periods before beginning today's transaction.
         await ensureCustomerNotebooks(businessId, debtorId);
 
         await run("BEGIN IMMEDIATE TRANSACTION");
         transactionStarted = true;
 
-        const debtor = await get(
-            `SELECT id, full_name, credit_limit, credit_enabled
-             FROM customers
-             WHERE id = ? AND business_id = ?`,
-            [debtorId, businessId]
+        const debtor = await getDebtorForUpdate(
+            businessId,
+            debtorId
         );
 
         if (!debtor) {
-            throw Object.assign(new Error("Debtor not found."), {
-                statusCode: 404
-            });
+            throw Object.assign(
+                new Error("Debtor not found."),
+                { statusCode: 404 }
+            );
         }
 
         if (Number(debtor.credit_enabled) !== 1) {
@@ -348,10 +625,18 @@ router.post("/:id/transactions", async (req, res) => {
 
         for (const requested of requestedItems) {
             const product = await get(
-                `SELECT id, product_name, selling_price, stock_quantity
+                `SELECT
+                    id,
+                    product_name,
+                    selling_price,
+                    stock_quantity
                  FROM products
-                 WHERE id = ? AND business_id = ?`,
-                [requested.productId, businessId]
+                 WHERE id = ?
+                   AND business_id = ?`,
+                [
+                    requested.productId,
+                    businessId
+                ]
             );
 
             if (!product) {
@@ -371,17 +656,19 @@ router.post("/:id/transactions", async (req, res) => {
                 stock < requested.quantity
             ) {
                 throw Object.assign(
-                    new Error(`Insufficient stock for ${product.product_name}. Available: ${stock}.`),
+                    new Error(
+                        `Insufficient stock for ${product.product_name}. Available: ${stock}.`
+                    ),
                     { statusCode: 400 }
                 );
             }
 
-            const lineTotal = Number(
-                (requested.quantity * price).toFixed(2)
+            const lineTotal = roundMoney(
+                requested.quantity * price
             );
 
-            totalAmount = Number(
-                (totalAmount + lineTotal).toFixed(2)
+            totalAmount = roundMoney(
+                totalAmount + lineTotal
             );
 
             products.push({
@@ -392,36 +679,22 @@ router.post("/:id/transactions", async (req, res) => {
             });
         }
 
-        const currentBalances = await get(
-            `SELECT
-                COALESCE((
-                    SELECT SUM(total_amount)
-                    FROM debtor_transactions
-                    WHERE customer_id = ? AND business_id = ?
-                ), 0) AS total_debt,
-                COALESCE((
-                    SELECT SUM(amount)
-                    FROM debtor_payments
-                    WHERE customer_id = ? AND business_id = ?
-                ), 0) AS total_paid`,
-            [debtorId, businessId, debtorId, businessId]
+        const currentBalances = await getDebtorBalances(
+            businessId,
+            debtorId
         );
-
-        const netBefore =
-            Number(currentBalances.total_debt) -
-            Number(currentBalances.total_paid);
-
-        const netAfter = Number(
-            (netBefore + totalAmount).toFixed(2)
-        );
-
-        const projectedBalance = Math.max(0, netAfter);
-        const projectedCredit = Math.max(0, -netAfter);
 
         const currentStatus = calculateDebtorStatus(
             currentBalances.total_debt,
             currentBalances.total_paid
         );
+
+        const netAfter = roundMoney(
+            currentStatus.net_balance + totalAmount
+        );
+
+        const projectedBalance = Math.max(0, netAfter);
+        const projectedCredit = Math.max(0, -netAfter);
 
         const creditLimit = Number(debtor.credit_limit) || 0;
 
@@ -437,13 +710,12 @@ router.post("/:id/transactions", async (req, res) => {
             );
         }
 
-        const daily = await get(
-            `SELECT id, status
-             FROM debtor_daily_notebooks
-             WHERE business_id = ?
-               AND customer_id = ?
-               AND notebook_date = ?`,
-            [businessId, debtorId, date]
+        const { daily, monthly } = await getNotebookStatus(
+            businessId,
+            debtorId,
+            today.date,
+            today.year,
+            today.month
         );
 
         if (daily?.status === "closed") {
@@ -452,16 +724,6 @@ router.post("/:id/transactions", async (req, res) => {
                 { statusCode: 409 }
             );
         }
-
-        const monthly = await get(
-            `SELECT id, status
-             FROM debtor_monthly_notebooks
-             WHERE business_id = ?
-               AND customer_id = ?
-               AND year = ?
-               AND month = ?`,
-            [businessId, debtorId, year, month]
-        );
 
         if (monthly?.status === "closed") {
             throw Object.assign(
@@ -484,7 +746,7 @@ router.post("/:id/transactions", async (req, res) => {
                 businessId,
                 debtorId,
                 transactionNumber,
-                date,
+                today.date,
                 totalAmount,
                 notes || null,
                 userId
@@ -511,6 +773,11 @@ router.post("/:id/transactions", async (req, res) => {
                 ]
             );
 
+            const stockBefore = Number(product.stock_quantity);
+            const stockAfter = roundMoney(
+                stockBefore - product.quantity
+            );
+
             const stockUpdate = await run(
                 `UPDATE products
                  SET stock_quantity = stock_quantity - ?
@@ -527,15 +794,77 @@ router.post("/:id/transactions", async (req, res) => {
 
             if (stockUpdate.changes !== 1) {
                 throw Object.assign(
-                    new Error(`Stock changed while processing ${product.product_name}. Please try again.`),
+                    new Error(
+                        `Stock changed while processing ${product.product_name}. Please try again.`
+                    ),
                     { statusCode: 409 }
                 );
             }
+
+            await run(
+                `INSERT INTO stock_movements (
+                    business_id,
+                    product_id,
+                    movement_type,
+                    quantity_before,
+                    quantity_changed,
+                    quantity_after,
+                    reason,
+                    reference_type,
+                    reference_id,
+                    created_by
+                ) VALUES (?, ?, 'credit_sale', ?, ?, ?, ?, 'debtor_transaction', ?, ?)`,
+                [
+                    businessId,
+                    product.id,
+                    stockBefore,
+                    -product.quantity,
+                    stockAfter,
+                    `Credit sale to ${debtor.full_name} (${transactionNumber})`,
+                    transactionResult.lastID,
+                    userId
+                ]
+            );
         }
 
-        const openingBalance = currentStatus.balance;
+        const dailyOpening = daily
+            ? Number(daily.opening_balance)
+            : await getBalanceBefore(
+                businessId,
+                debtorId,
+                today.date
+            );
 
-        if (!daily) {
+        const monthlyOpening = monthly
+            ? Number(monthly.opening_balance)
+            : await getBalanceBefore(
+                businessId,
+                debtorId,
+                getMonthStart(today.year, today.month)
+            );
+
+        if (daily) {
+            const update = await run(
+                `UPDATE debtor_daily_notebooks
+                 SET
+                    debt_added = debt_added + ?,
+                    closing_balance = ?
+                 WHERE id = ?
+                   AND status = 'open'`,
+                [
+                    totalAmount,
+                    netAfter,
+                    daily.id
+                ]
+            );
+
+            if (update.changes !== 1) {
+                throw Object.assign(
+                    new Error("The daily notebook is no longer open."),
+                    { statusCode: 409 }
+                );
+            }
+        } else {
             await run(
                 `INSERT INTO debtor_daily_notebooks (
                     business_id,
@@ -550,23 +879,36 @@ router.post("/:id/transactions", async (req, res) => {
                 [
                     businessId,
                     debtorId,
-                    date,
-                    openingBalance,
+                    today.date,
+                    dailyOpening,
                     totalAmount,
-                    projectedBalance
+                    netAfter
                 ]
-            );
-        } else {
-            await run(
-                `UPDATE debtor_daily_notebooks
-                 SET debt_added = debt_added + ?,
-                     closing_balance = ?
-                 WHERE id = ? AND status = 'open'`,
-                [totalAmount, projectedBalance, daily.id]
             );
         }
 
-        if (!monthly) {
+        if (monthly) {
+            const update = await run(
+                `UPDATE debtor_monthly_notebooks
+                 SET
+                    debt_added = debt_added + ?,
+                    closing_balance = ?
+                 WHERE id = ?
+                   AND status = 'open'`,
+                [
+                    totalAmount,
+                    netAfter,
+                    monthly.id
+                ]
+            );
+
+            if (update.changes !== 1) {
+                throw Object.assign(
+                    new Error("The monthly notebook is no longer open."),
+                    { statusCode: 409 }
+                );
+            }
+        } else {
             await run(
                 `INSERT INTO debtor_monthly_notebooks (
                     business_id,
@@ -582,20 +924,12 @@ router.post("/:id/transactions", async (req, res) => {
                 [
                     businessId,
                     debtorId,
-                    year,
-                    month,
-                    openingBalance,
+                    today.year,
+                    today.month,
+                    monthlyOpening,
                     totalAmount,
-                    projectedBalance
+                    netAfter
                 ]
-            );
-        } else {
-            await run(
-                `UPDATE debtor_monthly_notebooks
-                 SET debt_added = debt_added + ?,
-                     closing_balance = ?
-                 WHERE id = ? AND status = 'open'`,
-                [totalAmount, projectedBalance, monthly.id]
             );
         }
 
@@ -608,7 +942,7 @@ router.post("/:id/transactions", async (req, res) => {
             transaction: {
                 id: transactionResult.lastID,
                 transaction_number: transactionNumber,
-                transaction_date: date,
+                transaction_date: today.date,
                 debtor_id: debtorId,
                 debtor_name: debtor.full_name,
                 total_amount: totalAmount,
@@ -620,7 +954,8 @@ router.post("/:id/transactions", async (req, res) => {
                     line_total: product.lineTotal
                 })),
                 new_balance: projectedBalance,
-                customer_credit: projectedCredit
+                customer_credit: projectedCredit,
+                net_balance: netAfter
             }
         });
     } catch (error) {
@@ -628,11 +963,17 @@ router.post("/:id/transactions", async (req, res) => {
             try {
                 await run("ROLLBACK");
             } catch (rollbackError) {
-                console.error("Credit transaction rollback error:", rollbackError.message);
+                console.error(
+                    "Credit transaction rollback error:",
+                    rollbackError.message
+                );
             }
         }
 
-        console.error("Credit transaction error:", error.message);
+        console.error(
+            "Credit transaction error:",
+            error.message
+        );
 
         res.status(error.statusCode || 500).json({
             success: false,
@@ -643,7 +984,10 @@ router.post("/:id/transactions", async (req, res) => {
     }
 });
 
+// ======================================================
 // RECORD DEBTOR PAYMENT
+// ======================================================
+
 router.post("/:id/payments", async (req, res) => {
     const businessId = req.session.user.business_id;
     const userId = req.session.user.id;
@@ -657,16 +1001,38 @@ router.post("/:id/payments", async (req, res) => {
     }
 
     const amount = Number(req.body.amount);
-    const paymentType = cleanText(req.body.payment_type, 30).toLowerCase();
-    const paymentMethod = cleanText(req.body.payment_method, 30).toLowerCase();
+    const paymentType = cleanText(
+        req.body.payment_type,
+        30
+    ).toLowerCase();
+
+    const paymentMethod = cleanText(
+        req.body.payment_method,
+        30
+    ).toLowerCase();
+
     const reference = cleanText(req.body.reference, 150);
     const notes = cleanText(req.body.notes, 1000);
-    const paymentDate = parsePaymentDate(req.body.payment_date);
+    const paymentDate = parseDate(req.body.payment_date);
 
-    const allowedTypes = ["full", "partial", "overpayment"];
-    const allowedMethods = ["cash", "mpesa", "bank_transfer", "other"];
+    const allowedTypes = [
+        "full",
+        "partial",
+        "overpayment"
+    ];
 
-    if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000000000) {
+    const allowedMethods = [
+        "cash",
+        "mpesa",
+        "bank_transfer",
+        "other"
+    ];
+
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        amount > 1000000000000
+    ) {
         return res.status(400).json({
             success: false,
             message: "Enter a valid payment amount greater than zero."
@@ -696,7 +1062,6 @@ router.post("/:id/payments", async (req, res) => {
 
     const today = kenyaDateParts();
 
-    // A previous date belongs to a closed daily notebook.
     if (paymentDate.date < today.date) {
         return res.status(409).json({
             success: false,
@@ -711,44 +1076,33 @@ router.post("/:id/payments", async (req, res) => {
         });
     }
 
-    const roundedAmount = Number(amount.toFixed(2));
+    const roundedAmount = roundMoney(amount);
     let transactionStarted = false;
 
     try {
-        await ensureCustomerNotebooks(businessId, debtorId);
+        await ensureCustomerNotebooks(
+            businessId,
+            debtorId
+        );
 
         await run("BEGIN IMMEDIATE TRANSACTION");
         transactionStarted = true;
 
-        const debtor = await get(
-            `SELECT id, full_name
-             FROM customers
-             WHERE id = ? AND business_id = ?`,
-            [debtorId, businessId]
+        const debtor = await getDebtorForUpdate(
+            businessId,
+            debtorId
         );
 
         if (!debtor) {
-            throw Object.assign(new Error("Debtor not found."), {
-                statusCode: 404
-            });
+            throw Object.assign(
+                new Error("Debtor not found."),
+                { statusCode: 404 }
+            );
         }
 
-        const balances = await get(
-            `SELECT
-                COALESCE((
-                    SELECT SUM(total_amount)
-                    FROM debtor_transactions
-                    WHERE customer_id = ?
-                      AND business_id = ?
-                ), 0) AS total_debt,
-
-                COALESCE((
-                    SELECT SUM(amount)
-                    FROM debtor_payments
-                    WHERE customer_id = ?
-                      AND business_id = ?
-                ), 0) AS total_paid`,
-            [debtorId, businessId, debtorId, businessId]
+        const balances = await getDebtorBalances(
+            businessId,
+            debtorId
         );
 
         const currentStatus = calculateDebtorStatus(
@@ -756,12 +1110,17 @@ router.post("/:id/payments", async (req, res) => {
             balances.total_paid
         );
 
-        const currentBalance = Number(currentStatus.balance.toFixed(2));
+        const currentBalance = roundMoney(
+            currentStatus.balance
+        );
 
-        if (paymentType === "full" && roundedAmount !== currentBalance) {
+        if (
+            paymentType === "full" &&
+            roundedAmount !== currentBalance
+        ) {
             throw Object.assign(
                 new Error(
-                    `Full payment must equal the outstanding balance of KSh ${currentBalance.toFixed(2)}.`
+                    `Full payment must equal the outstanding balance of ${currentBalance.toFixed(2)}.`
                 ),
                 { statusCode: 400 }
             );
@@ -769,7 +1128,10 @@ router.post("/:id/payments", async (req, res) => {
 
         if (
             paymentType === "partial" &&
-            (currentBalance <= 0 || roundedAmount >= currentBalance)
+            (
+                currentBalance <= 0 ||
+                roundedAmount >= currentBalance
+            )
         ) {
             throw Object.assign(
                 new Error(
@@ -791,24 +1153,19 @@ router.post("/:id/payments", async (req, res) => {
             );
         }
 
-        const newNetBalance = Number(
-            (
-                Number(balances.total_debt) -
-                Number(balances.total_paid) -
-                roundedAmount
-            ).toFixed(2)
+        const newNetBalance = roundMoney(
+            currentStatus.net_balance - roundedAmount
         );
 
         const newBalance = Math.max(0, newNetBalance);
         const customerCredit = Math.max(0, -newNetBalance);
 
-        const daily = await get(
-            `SELECT id, status
-             FROM debtor_daily_notebooks
-             WHERE business_id = ?
-               AND customer_id = ?
-               AND notebook_date = ?`,
-            [businessId, debtorId, today.date]
+        const { daily, monthly } = await getNotebookStatus(
+            businessId,
+            debtorId,
+            paymentDate.date,
+            today.year,
+            today.month
         );
 
         if (daily?.status === "closed") {
@@ -817,16 +1174,6 @@ router.post("/:id/payments", async (req, res) => {
                 { statusCode: 409 }
             );
         }
-
-        const monthly = await get(
-            `SELECT id, status
-             FROM debtor_monthly_notebooks
-             WHERE business_id = ?
-               AND customer_id = ?
-               AND year = ?
-               AND month = ?`,
-            [businessId, debtorId, today.year, today.month]
-        );
 
         if (monthly?.status === "closed") {
             throw Object.assign(
@@ -849,7 +1196,7 @@ router.post("/:id/payments", async (req, res) => {
             [
                 businessId,
                 debtorId,
-                today.date,
+                paymentDate.date,
                 roundedAmount,
                 paymentMethod,
                 reference || null,
@@ -858,7 +1205,44 @@ router.post("/:id/payments", async (req, res) => {
             ]
         );
 
-        if (!daily) {
+        const dailyOpening = daily
+            ? Number(daily.opening_balance)
+            : await getBalanceBefore(
+                businessId,
+                debtorId,
+                paymentDate.date
+            );
+
+        const monthlyOpening = monthly
+            ? Number(monthly.opening_balance)
+            : await getBalanceBefore(
+                businessId,
+                debtorId,
+                getMonthStart(today.year, today.month)
+            );
+
+        if (daily) {
+            const update = await run(
+                `UPDATE debtor_daily_notebooks
+                 SET
+                    payments_received = payments_received + ?,
+                    closing_balance = ?
+                 WHERE id = ?
+                   AND status = 'open'`,
+                [
+                    roundedAmount,
+                    newNetBalance,
+                    daily.id
+                ]
+            );
+
+            if (update.changes !== 1) {
+                throw Object.assign(
+                    new Error("The daily notebook is no longer open."),
+                    { statusCode: 409 }
+                );
+            }
+        } else {
             await run(
                 `INSERT INTO debtor_daily_notebooks (
                     business_id,
@@ -873,30 +1257,36 @@ router.post("/:id/payments", async (req, res) => {
                 [
                     businessId,
                     debtorId,
-                    today.date,
-                    currentBalance,
+                    paymentDate.date,
+                    dailyOpening,
                     roundedAmount,
-                    newBalance
+                    newNetBalance
                 ]
             );
-        } else {
-            const dailyUpdate = await run(
-                `UPDATE debtor_daily_notebooks
-                 SET payments_received = payments_received + ?,
-                     closing_balance = ?
-                 WHERE id = ? AND status = 'open'`,
-                [roundedAmount, newBalance, daily.id]
+        }
+
+        if (monthly) {
+            const update = await run(
+                `UPDATE debtor_monthly_notebooks
+                 SET
+                    payments_received = payments_received + ?,
+                    closing_balance = ?
+                 WHERE id = ?
+                   AND status = 'open'`,
+                [
+                    roundedAmount,
+                    newNetBalance,
+                    monthly.id
+                ]
             );
 
-            if (dailyUpdate.changes !== 1) {
+            if (update.changes !== 1) {
                 throw Object.assign(
-                    new Error("The daily notebook is no longer open. Payment was not saved."),
+                    new Error("The monthly notebook is no longer open."),
                     { statusCode: 409 }
                 );
             }
-        }
-
-        if (!monthly) {
+        } else {
             await run(
                 `INSERT INTO debtor_monthly_notebooks (
                     business_id,
@@ -914,26 +1304,11 @@ router.post("/:id/payments", async (req, res) => {
                     debtorId,
                     today.year,
                     today.month,
-                    currentBalance,
+                    monthlyOpening,
                     roundedAmount,
-                    newBalance
+                    newNetBalance
                 ]
             );
-        } else {
-            const monthlyUpdate = await run(
-                `UPDATE debtor_monthly_notebooks
-                 SET payments_received = payments_received + ?,
-                     closing_balance = ?
-                 WHERE id = ? AND status = 'open'`,
-                [roundedAmount, newBalance, monthly.id]
-            );
-
-            if (monthlyUpdate.changes !== 1) {
-                throw Object.assign(
-                    new Error("The monthly notebook is no longer open. Payment was not saved."),
-                    { statusCode: 409 }
-                );
-            }
         }
 
         await run("COMMIT");
@@ -947,12 +1322,13 @@ router.post("/:id/payments", async (req, res) => {
                 debtor_id: debtorId,
                 debtor_name: debtor.full_name,
                 payment_type: paymentType,
-                payment_date: today.date,
+                payment_date: paymentDate.date,
                 amount: roundedAmount,
                 payment_method: paymentMethod,
                 reference: reference || null,
                 new_balance: newBalance,
-                customer_credit: customerCredit
+                customer_credit: customerCredit,
+                net_balance: newNetBalance
             }
         });
     } catch (error) {
@@ -960,11 +1336,17 @@ router.post("/:id/payments", async (req, res) => {
             try {
                 await run("ROLLBACK");
             } catch (rollbackError) {
-                console.error("Payment rollback error:", rollbackError.message);
+                console.error(
+                    "Payment rollback error:",
+                    rollbackError.message
+                );
             }
         }
 
-        console.error("Record debtor payment error:", error.message);
+        console.error(
+            "Record debtor payment error:",
+            error.message
+        );
 
         res.status(error.statusCode || 500).json({
             success: false,
@@ -975,7 +1357,416 @@ router.post("/:id/payments", async (req, res) => {
     }
 });
 
+// ======================================================
+// DAILY NOTEBOOK
+// ======================================================
+
+router.get("/:id/notebooks/daily", async (req, res) => {
+    const businessId = req.session.user.business_id;
+    const debtorId = validId(req.params.id);
+    const selectedDate = req.query.date
+        ? parseDate(req.query.date)
+        : parseDate(kenyaDateParts().date);
+
+    if (!debtorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid debtor ID."
+        });
+    }
+
+    if (!selectedDate) {
+        return res.status(400).json({
+            success: false,
+            message: "Enter a valid notebook date."
+        });
+    }
+
+    try {
+        const debtor = await getDebtor(
+            businessId,
+            debtorId
+        );
+
+        if (!debtor) {
+            return res.status(404).json({
+                success: false,
+                message: "Debtor not found."
+            });
+        }
+
+        const notebook = await getDailySnapshot(
+            businessId,
+            debtorId,
+            selectedDate.date
+        );
+
+        res.json({
+            success: true,
+            debtor_id: debtorId,
+            notebook,
+            summary: notebook
+        });
+    } catch (error) {
+        console.error(
+            "Load daily debtor notebook error:",
+            error.message
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "Could not load the daily notebook."
+        });
+    }
+});
+
+// ======================================================
+// MONTHLY NOTEBOOK
+// ======================================================
+
+router.get("/:id/notebooks/monthly", async (req, res) => {
+    const businessId = req.session.user.business_id;
+    const debtorId = validId(req.params.id);
+    const today = kenyaDateParts();
+
+    const year = parseYear(req.query.year || today.year);
+    const month = parseMonth(req.query.month || today.month);
+
+    if (!debtorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid debtor ID."
+        });
+    }
+
+    if (!year || !month) {
+        return res.status(400).json({
+            success: false,
+            message: "Enter a valid year and month."
+        });
+    }
+
+    try {
+        const debtor = await getDebtor(
+            businessId,
+            debtorId
+        );
+
+        if (!debtor) {
+            return res.status(404).json({
+                success: false,
+                message: "Debtor not found."
+            });
+        }
+
+        const notebook = await getMonthlySnapshot(
+            businessId,
+            debtorId,
+            year,
+            month
+        );
+
+        res.json({
+            success: true,
+            debtor_id: debtorId,
+            notebook,
+            summary: notebook
+        });
+    } catch (error) {
+        console.error(
+            "Load monthly debtor notebook error:",
+            error.message
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "Could not load the monthly notebook."
+        });
+    }
+});
+
+// ======================================================
+// YEARLY NOTEBOOK
+// ======================================================
+
+router.get("/:id/notebooks/yearly", async (req, res) => {
+    const businessId = req.session.user.business_id;
+    const debtorId = validId(req.params.id);
+    const today = kenyaDateParts();
+
+    const year = parseYear(req.query.year || today.year);
+
+    if (!debtorId) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid debtor ID."
+        });
+    }
+
+    if (!year) {
+        return res.status(400).json({
+            success: false,
+            message: "Enter a valid year."
+        });
+    }
+
+    try {
+        const debtor = await getDebtor(
+            businessId,
+            debtorId
+        );
+
+        if (!debtor) {
+            return res.status(404).json({
+                success: false,
+                message: "Debtor not found."
+            });
+        }
+
+        const months = [];
+
+        for (let month = 1; month <= 12; month++) {
+            const notebook = await getMonthlySnapshot(
+                businessId,
+                debtorId,
+                year,
+                month
+            );
+
+            months.push(notebook);
+        }
+
+        const openingBalance = await getBalanceBefore(
+            businessId,
+            debtorId,
+            `${year}-01-01`
+        );
+
+        const totalDebt = roundMoney(
+            months.reduce(
+                (sum, item) => sum + item.debt_added,
+                0
+            )
+        );
+
+        const totalPayments = roundMoney(
+            months.reduce(
+                (sum, item) => sum + item.payments_received,
+                0
+            )
+        );
+
+        const closingBalance = roundMoney(
+            openingBalance + totalDebt - totalPayments
+        );
+
+        const notebook = {
+            year,
+            opening_balance: roundMoney(openingBalance),
+            debt_added: totalDebt,
+            payments_received: totalPayments,
+            closing_balance: closingBalance,
+            balance: Math.max(0, closingBalance),
+            customer_credit: Math.max(0, -closingBalance),
+            months
+        };
+
+        res.json({
+            success: true,
+            debtor_id: debtorId,
+            notebook,
+            summary: notebook,
+            months
+        });
+    } catch (error) {
+        console.error(
+            "Load yearly debtor notebook error:",
+            error.message
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "Could not load the yearly notebook."
+        });
+    }
+});
+
+// ======================================================
+// DEBTOR REPORTS
+// ======================================================
+
+router.get("/reports", async (req, res) => {
+    const businessId = req.session.user.business_id;
+    const period = cleanText(
+        req.query.period || "daily",
+        20
+    ).toLowerCase();
+
+    if (!["daily", "monthly", "yearly"].includes(period)) {
+        return res.status(400).json({
+            success: false,
+            message: "Choose a daily, monthly, or yearly report."
+        });
+    }
+
+    const range = getReportRange(period, req.query);
+
+    if (!range) {
+        return res.status(400).json({
+            success: false,
+            message: "The selected report date is invalid."
+        });
+    }
+
+    try {
+        const debtors = await all(
+            `SELECT
+                c.id,
+                c.full_name,
+                c.phone,
+
+                COALESCE(t.total_debt, 0) AS total_debt,
+                COALESCE(p.total_paid, 0) AS total_paid
+
+             FROM customers c
+
+             LEFT JOIN (
+                SELECT
+                    customer_id,
+                    SUM(total_amount) AS total_debt
+                FROM debtor_transactions
+                WHERE business_id = ?
+                  AND transaction_date >= ?
+                  AND transaction_date < ?
+                GROUP BY customer_id
+             ) t ON t.customer_id = c.id
+
+             LEFT JOIN (
+                SELECT
+                    customer_id,
+                    SUM(amount) AS total_paid
+                FROM debtor_payments
+                WHERE business_id = ?
+                  AND payment_date >= ?
+                  AND payment_date < ?
+                GROUP BY customer_id
+             ) p ON p.customer_id = c.id
+
+             WHERE c.business_id = ?
+             ORDER BY LOWER(c.full_name) ASC`,
+            [
+                businessId,
+                range.startDate,
+                range.endDate,
+                businessId,
+                range.startDate,
+                range.endDate,
+                businessId
+            ]
+        );
+
+        const reportDebtors = debtors.map(debtor => {
+            const status = calculateDebtorStatus(
+                debtor.total_debt,
+                debtor.total_paid
+            );
+
+            return {
+                id: debtor.id,
+                full_name: debtor.full_name,
+                phone: debtor.phone,
+                ...status
+            };
+        });
+
+        const totalDebt = roundMoney(
+            reportDebtors.reduce(
+                (sum, debtor) => sum + debtor.total_debt,
+                0
+            )
+        );
+
+        const totalPayments = roundMoney(
+            reportDebtors.reduce(
+                (sum, debtor) => sum + debtor.total_paid,
+                0
+            )
+        );
+
+        const totalOutstanding = roundMoney(
+            reportDebtors.reduce(
+                (sum, debtor) => sum + debtor.balance,
+                0
+            )
+        );
+
+        const totalCustomerCredit = roundMoney(
+            reportDebtors.reduce(
+                (sum, debtor) => sum + debtor.customer_credit,
+                0
+            )
+        );
+
+        const statusCounts = {
+            unpaid: 0,
+            partially_paid: 0,
+            paid: 0,
+            customer_credit: 0,
+            no_activity: 0
+        };
+
+        for (const debtor of reportDebtors) {
+            statusCounts[debtor.status] =
+                (statusCounts[debtor.status] || 0) + 1;
+        }
+
+        const topDebtors = [...reportDebtors]
+            .filter(debtor => debtor.balance > 0)
+            .sort((a, b) => b.balance - a.balance)
+            .slice(0, 10);
+
+        const summary = {
+            period,
+            period_label: range.label,
+            start_date: range.startDate,
+            end_date: range.endDate,
+            total_debt: totalDebt,
+            total_payments: totalPayments,
+            total_outstanding: totalOutstanding,
+            total_customer_credit: totalCustomerCredit,
+            debtor_count: reportDebtors.length,
+            active_debtors: reportDebtors.filter(
+                debtor => debtor.status !== "no_activity"
+            ).length,
+            status_counts: statusCounts
+        };
+
+        res.json({
+            success: true,
+            period,
+            report: summary,
+            summary,
+            debtors: reportDebtors,
+            top_debtors: topDebtors,
+            status_counts: statusCounts
+        });
+    } catch (error) {
+        console.error(
+            "Load debtor reports error:",
+            error.message
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "Could not generate the debtor report."
+        });
+    }
+});
+
+// ======================================================
 // GET DEBTOR TRANSACTION AND PAYMENT HISTORY
+// ======================================================
+
 router.get("/:id/history", async (req, res) => {
     const businessId = req.session.user.business_id;
     const debtorId = validId(req.params.id);
@@ -988,11 +1779,9 @@ router.get("/:id/history", async (req, res) => {
     }
 
     try {
-        const debtor = await get(
-            `SELECT id, full_name
-             FROM customers
-             WHERE id = ? AND business_id = ?`,
-            [debtorId, businessId]
+        const debtor = await getDebtor(
+            businessId,
+            debtorId
         );
 
         if (!debtor) {
@@ -1002,7 +1791,10 @@ router.get("/:id/history", async (req, res) => {
             });
         }
 
-        await ensureCustomerNotebooks(businessId, debtorId);
+        await ensureCustomerNotebooks(
+            businessId,
+            debtorId
+        );
 
         const transactions = await all(
             `SELECT
@@ -1035,11 +1827,16 @@ router.get("/:id/history", async (req, res) => {
             [debtorId, businessId]
         );
 
-        const transactionIds = transactions.map(item => item.id);
+        const transactionIds = transactions.map(
+            transaction => transaction.id
+        );
+
         let transactionItems = [];
 
         if (transactionIds.length > 0) {
-            const placeholders = transactionIds.map(() => "?").join(",");
+            const placeholders = transactionIds
+                .map(() => "?")
+                .join(",");
 
             transactionItems = await all(
                 `SELECT
@@ -1080,7 +1877,10 @@ router.get("/:id/history", async (req, res) => {
             payments
         });
     } catch (error) {
-        console.error("Load debtor history error:", error.message);
+        console.error(
+            "Load debtor history error:",
+            error.message
+        );
 
         res.status(500).json({
             success: false,
@@ -1089,7 +1889,10 @@ router.get("/:id/history", async (req, res) => {
     }
 });
 
+// ======================================================
 // GET ONE DEBTOR PROFILE
+// ======================================================
+
 router.get("/:id", async (req, res) => {
     const businessId = req.session.user.business_id;
     const debtorId = validId(req.params.id);
@@ -1102,7 +1905,22 @@ router.get("/:id", async (req, res) => {
     }
 
     try {
-        await ensureCustomerNotebooks(businessId, debtorId);
+        const debtorExists = await getDebtor(
+            businessId,
+            debtorId
+        );
+
+        if (!debtorExists) {
+            return res.status(404).json({
+                success: false,
+                message: "Debtor not found."
+            });
+        }
+
+        await ensureCustomerNotebooks(
+            businessId,
+            debtorId
+        );
 
         const debtor = await get(
             `SELECT
@@ -1136,13 +1954,6 @@ router.get("/:id", async (req, res) => {
             [debtorId, businessId]
         );
 
-        if (!debtor) {
-            return res.status(404).json({
-                success: false,
-                message: "Debtor not found."
-            });
-        }
-
         res.json({
             success: true,
             debtor: {
@@ -1154,7 +1965,10 @@ router.get("/:id", async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Load debtor profile error:", error.message);
+        console.error(
+            "Load debtor profile error:",
+            error.message
+        );
 
         res.status(500).json({
             success: false,
@@ -1163,8 +1977,11 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// ======================================================
 // UPDATE DEBTOR PROFILE
-router.put("/:id", (req, res) => {
+// ======================================================
+
+router.put("/:id", async (req, res) => {
     const businessId = req.session.user.business_id;
     const debtorId = validId(req.params.id);
 
@@ -1180,7 +1997,12 @@ router.put("/:id", (req, res) => {
     const email = cleanText(req.body.email, 150);
     const address = cleanText(req.body.address, 250);
     const notes = cleanText(req.body.notes, 2000);
-    const creditLimit = Number(req.body.credit_limit);
+
+    const creditLimit =
+        req.body.credit_limit === undefined ||
+        req.body.credit_limit === ""
+            ? 0
+            : Number(req.body.credit_limit);
 
     const creditEnabled =
         req.body.credit_enabled === true ||
@@ -1213,51 +2035,54 @@ router.put("/:id", (req, res) => {
         });
     }
 
-    db.run(
-        `UPDATE customers
-         SET
-            full_name = ?,
-            phone = ?,
-            email = ?,
-            address = ?,
-            notes = ?,
-            credit_limit = ?,
-            credit_enabled = ?
-         WHERE id = ?
-           AND business_id = ?`,
-        [
-            fullName,
-            phone || null,
-            email || null,
-            address || null,
-            notes || null,
-            creditLimit,
-            creditEnabled,
-            debtorId,
-            businessId
-        ],
-        function (error) {
-            if (error) {
-                console.error("Update debtor error:", error.message);
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not update debtor profile."
-                });
-            }
+    try {
+        const result = await run(
+            `UPDATE customers
+             SET
+                full_name = ?,
+                phone = ?,
+                email = ?,
+                address = ?,
+                notes = ?,
+                credit_limit = ?,
+                credit_enabled = ?
+             WHERE id = ?
+               AND business_id = ?`,
+            [
+                fullName,
+                phone || null,
+                email || null,
+                address || null,
+                notes || null,
+                creditLimit,
+                creditEnabled,
+                debtorId,
+                businessId
+            ]
+        );
 
-            if (this.changes === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Debtor not found."
-                });
-            }
-
-            res.json({
-                success: true,
-                message: "Debtor profile updated successfully."
+        if (result.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Debtor not found."
             });
         }
-    );
+
+        res.json({
+            success: true,
+            message: "Debtor profile updated successfully."
+        });
+    } catch (error) {
+        console.error(
+            "Update debtor error:",
+            error.message
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "Could not update debtor profile."
+        });
+    }
 });
 
 module.exports = router;

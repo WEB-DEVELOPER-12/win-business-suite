@@ -1,11 +1,14 @@
 
+"use strict";
+
 const express = require("express");
-const db = require("../config/database");
+const db = require("../config/postgresRouteDatabase");
 const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
 router.use(requireAuth);
+router.use(db.middleware);
 
 // WIN standard categories recommended for each business type.
 const standardCategories = {
@@ -163,6 +166,7 @@ const standardCategories = {
 
 function sendDatabaseError(res, error) {
     console.error("Category database error:", error.message);
+
     return res.status(500).json({
         success: false,
         message: "A category database error occurred."
@@ -176,8 +180,11 @@ function validateParent(businessId, parentId, callback) {
     }
 
     db.get(
-        `SELECT id FROM business_categories
-         WHERE id = ? AND business_id = ? AND parent_id IS NULL`,
+        `SELECT id
+         FROM business_categories
+         WHERE id = ?
+           AND business_id = ?
+           AND parent_id IS NULL`,
         [parentId, businessId],
         (error, row) => {
             if (error) return callback(error);
@@ -191,12 +198,13 @@ function seedStandardCategories(businessId, businessType, callback) {
     db.get(
         `SELECT COUNT(*) AS total
          FROM business_categories
-         WHERE business_id = ? AND category_type = 'standard'`,
+         WHERE business_id = ?
+           AND category_type = 'standard'`,
         [businessId],
         (error, result) => {
             if (error) return callback(error);
 
-            if (result.total > 0) {
+            if (Number(result.total) > 0) {
                 return callback(null);
             }
 
@@ -232,11 +240,14 @@ function seedStandardCategories(businessId, businessType, callback) {
 
 // GET /api/categories
 // List categories and their product counts.
+
 router.get("/", (req, res) => {
     const businessId = req.session.user.business_id;
 
     db.get(
-        "SELECT business_type FROM businesses WHERE id = ?",
+        `SELECT business_type
+         FROM businesses
+         WHERE id = ?`,
         [businessId],
         (error, business) => {
             if (error) return sendDatabaseError(res, error);
@@ -274,10 +285,13 @@ router.get("/", (req, res) => {
                          FROM business_categories c
                          WHERE c.business_id = ?
                          ORDER BY
-                            CASE WHEN c.category_type = 'standard'
-                                 THEN 0 ELSE 1 END,
-                            c.parent_id IS NOT NULL,
-                            c.name COLLATE NOCASE`,
+                            CASE
+                                WHEN c.category_type = 'standard'
+                                THEN 0
+                                ELSE 1
+                            END,
+                            (c.parent_id IS NOT NULL),
+                            LOWER(c.name)`,
                         [businessId],
                         (listError, categories) => {
                             if (listError) {
@@ -298,11 +312,13 @@ router.get("/", (req, res) => {
 
 // POST /api/categories
 // Create a custom category or subcategory.
+
 router.post("/", (req, res) => {
     const businessId = req.session.user.business_id;
     const name = String(req.body.name || "").trim();
     const description = String(req.body.description || "").trim();
     const icon = String(req.body.icon || "📁").trim();
+
     const parentId =
         req.body.parent_id === undefined ||
         req.body.parent_id === null ||
@@ -338,8 +354,11 @@ router.post("/", (req, res) => {
         }
 
         db.get(
-            `SELECT id FROM business_categories
-             WHERE business_id = ? AND name = ? AND parent_id IS ?`,
+            `SELECT id
+             FROM business_categories
+             WHERE business_id = ?
+               AND name = ?
+               AND parent_id IS NOT DISTINCT FROM ?`,
             [businessId, name, parentId],
             (checkError, existing) => {
                 if (checkError) {
@@ -385,6 +404,7 @@ router.post("/", (req, res) => {
 
 // PUT /api/categories/:id
 // Only custom categories can be edited.
+
 router.put("/:id", (req, res) => {
     const businessId = req.session.user.business_id;
     const categoryId = Number(req.params.id);
@@ -429,10 +449,11 @@ router.put("/:id", (req, res) => {
             }
 
             db.get(
-                `SELECT id FROM business_categories
+                `SELECT id
+                 FROM business_categories
                  WHERE business_id = ?
                    AND name = ?
-                   AND parent_id IS ?
+                   AND parent_id IS NOT DISTINCT FROM ?
                    AND id != ?`,
                 [businessId, name, category.parent_id, categoryId],
                 (checkError, existing) => {
@@ -450,7 +471,8 @@ router.put("/:id", (req, res) => {
                     db.run(
                         `UPDATE business_categories
                          SET name = ?, description = ?, icon = ?
-                         WHERE id = ? AND business_id = ?
+                         WHERE id = ?
+                           AND business_id = ?
                            AND category_type = 'custom'`,
                         [name, description, icon, categoryId, businessId],
                         updateError => {
@@ -472,6 +494,7 @@ router.put("/:id", (req, res) => {
 
 // DELETE /api/categories/:id
 // Standard categories, categories in use and categories with children are protected.
+
 router.delete("/:id", (req, res) => {
     const businessId = req.session.user.business_id;
     const categoryId = Number(req.params.id);
@@ -508,14 +531,15 @@ router.delete("/:id", (req, res) => {
             db.get(
                 `SELECT COUNT(*) AS total
                  FROM products
-                 WHERE category_id = ? AND business_id = ?`,
+                 WHERE category_id = ?
+                   AND business_id = ?`,
                 [categoryId, businessId],
                 (productError, productResult) => {
                     if (productError) {
                         return sendDatabaseError(res, productError);
                     }
 
-                    if (productResult.total > 0) {
+                    if (Number(productResult.total) > 0) {
                         return res.status(409).json({
                             success: false,
                             message: "This category contains products. Reassign those products before deleting it."
@@ -525,14 +549,15 @@ router.delete("/:id", (req, res) => {
                     db.get(
                         `SELECT COUNT(*) AS total
                          FROM business_categories
-                         WHERE parent_id = ? AND business_id = ?`,
+                         WHERE parent_id = ?
+                           AND business_id = ?`,
                         [categoryId, businessId],
                         (childError, childResult) => {
                             if (childError) {
                                 return sendDatabaseError(res, childError);
                             }
 
-                            if (childResult.total > 0) {
+                            if (Number(childResult.total) > 0) {
                                 return res.status(409).json({
                                     success: false,
                                     message: "This category has subcategories. Delete or move them first."
@@ -541,7 +566,8 @@ router.delete("/:id", (req, res) => {
 
                             db.run(
                                 `DELETE FROM business_categories
-                                 WHERE id = ? AND business_id = ?
+                                 WHERE id = ?
+                                   AND business_id = ?
                                    AND category_type = 'custom'`,
                                 [categoryId, businessId],
                                 deleteError => {

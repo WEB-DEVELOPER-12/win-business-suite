@@ -1,8 +1,9 @@
 
 const express = require("express");
-const router = express.Router();
-const db = require("../config/database");
+const pool = require("../config/postgresDatabase");
 const requireAuth = require("../middleware/requireAuth");
+
+const router = express.Router();
 
 router.use(requireAuth);
 
@@ -12,8 +13,13 @@ function validId(value) {
 }
 
 function validDate(value) {
-    return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-        !Number.isNaN(Date.parse(value + "T00:00:00Z"));
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+    }
+
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value;
 }
 
 function validMonth(year, month) {
@@ -24,56 +30,73 @@ function validMonth(year, month) {
         month <= 12;
 }
 
-function getSupplier(businessId, supplierId, callback) {
-    db.get(
-        `SELECT * FROM suppliers WHERE id = ? AND business_id = ?`,
-        [supplierId, businessId],
-        callback
+async function getSupplier(client, businessId, supplierId, lock = false) {
+    const result = await client.query(
+        `SELECT *
+         FROM suppliers
+         WHERE id = $1 AND business_id = $2
+         ${lock ? "FOR UPDATE" : ""}`,
+        [supplierId, businessId]
     );
+
+    return result.rows[0] || null;
 }
 
-function checkClosedMonth(businessId, supplierId, date, callback) {
+async function checkClosedMonth(client, businessId, supplierId, date) {
     const year = Number(date.slice(0, 4));
     const month = Number(date.slice(5, 7));
 
-    db.get(
-        `SELECT id FROM supplier_month_closures
-         WHERE business_id = ? AND supplier_id = ?
-         AND year = ? AND month = ?`,
-        [businessId, supplierId, year, month],
-        (error, closure) => {
-            if (error) return callback(error);
-            callback(null, Boolean(closure));
-        }
+    const result = await client.query(
+        `SELECT id
+         FROM supplier_month_closures
+         WHERE business_id = $1
+           AND supplier_id = $2
+           AND year = $3
+           AND month = $4`,
+        [businessId, supplierId, year, month]
     );
+
+    return result.rows.length > 0;
+}
+
+function monthDateRange(year, month) {
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endDate = new Date(Date.UTC(year, month, 1))
+        .toISOString()
+        .slice(0, 10);
+
+    return { startDate, endDate };
 }
 
 // GET ALL SUPPLIERS
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
     const businessId = req.session.user.business_id;
 
-    const sql = `
-        SELECT id, supplier_name, phone, email, notes, created_at
-        FROM suppliers
-        WHERE business_id = ?
-        ORDER BY created_at DESC
-    `;
+    try {
+        const result = await pool.query(
+            `SELECT id, supplier_name, phone, email, notes, created_at
+             FROM suppliers
+             WHERE business_id = $1
+             ORDER BY created_at DESC`,
+            [businessId]
+        );
 
-    db.all(sql, [businessId], (error, suppliers) => {
-        if (error) {
-            console.error("Get suppliers error:", error.message);
-            return res.status(500).json({
-                success: false,
-                message: "Could not load suppliers."
-            });
-        }
+        return res.json({
+            success: true,
+            suppliers: result.rows
+        });
+    } catch (error) {
+        console.error("Get suppliers error:", error.message);
 
-        res.json({ success: true, suppliers });
-    });
+        return res.status(500).json({
+            success: false,
+            message: "Could not load suppliers."
+        });
+    }
 });
 
 // ADD SUPPLIER
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierName = String(req.body.supplier_name || "").trim();
     const phone = String(req.body.phone || "").trim();
@@ -94,31 +117,38 @@ router.post("/", (req, res) => {
         });
     }
 
-    db.run(
-        `INSERT INTO suppliers
-         (business_id, supplier_name, phone, email, notes)
-         VALUES (?, ?, ?, ?, ?)`,
-        [businessId, supplierName, phone || null, email || null, notes || null],
-        function (error) {
-            if (error) {
-                console.error("Add supplier error:", error.message);
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not add supplier."
-                });
-            }
+    try {
+        const result = await pool.query(
+            `INSERT INTO suppliers
+                (business_id, supplier_name, phone, email, notes)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id`,
+            [
+                businessId,
+                supplierName,
+                phone || null,
+                email || null,
+                notes || null
+            ]
+        );
 
-            res.status(201).json({
-                success: true,
-                message: "Supplier added successfully.",
-                supplierId: this.lastID
-            });
-        }
-    );
+        return res.status(201).json({
+            success: true,
+            message: "Supplier added successfully.",
+            supplierId: result.rows[0].id
+        });
+    } catch (error) {
+        console.error("Add supplier error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not add supplier."
+        });
+    }
 });
 
 // UPDATE SUPPLIER
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierId = validId(req.params.id);
     const supplierName = String(req.body.supplier_name || "").trim();
@@ -140,38 +170,48 @@ router.put("/:id", (req, res) => {
         });
     }
 
-    db.run(
-        `UPDATE suppliers
-         SET supplier_name = ?, phone = ?, email = ?, notes = ?
-         WHERE id = ? AND business_id = ?`,
-        [supplierName, phone || null, email || null, notes || null,
-            supplierId, businessId],
-        function (error) {
-            if (error) {
-                console.error("Update supplier error:", error.message);
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not update supplier."
-                });
-            }
+    try {
+        const result = await pool.query(
+            `UPDATE suppliers
+             SET supplier_name = $1,
+                 phone = $2,
+                 email = $3,
+                 notes = $4
+             WHERE id = $5 AND business_id = $6
+             RETURNING id`,
+            [
+                supplierName,
+                phone || null,
+                email || null,
+                notes || null,
+                supplierId,
+                businessId
+            ]
+        );
 
-            if (!this.changes) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Supplier not found."
-                });
-            }
-
-            res.json({
-                success: true,
-                message: "Supplier updated successfully."
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Supplier not found."
             });
         }
-    );
+
+        return res.json({
+            success: true,
+            message: "Supplier updated successfully."
+        });
+    } catch (error) {
+        console.error("Update supplier error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not update supplier."
+        });
+    }
 });
 
 // DELETE SUPPLIER — PROTECT FINANCIAL HISTORY
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierId = validId(req.params.id);
 
@@ -182,13 +222,87 @@ router.delete("/:id", (req, res) => {
         });
     }
 
-    getSupplier(businessId, supplierId, (error, supplier) => {
-        if (error) {
-            return res.status(500).json({
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const supplier = await getSupplier(
+            client, businessId, supplierId, true
+        );
+
+        if (!supplier) {
+            await client.query("ROLLBACK");
+
+            return res.status(404).json({
                 success: false,
-                message: "Could not check supplier."
+                message: "Supplier not found."
             });
         }
+
+        const historyResult = await client.query(
+            `SELECT
+                (SELECT COUNT(*) FROM purchases
+                 WHERE business_id = $1 AND supplier_id = $2) +
+                (SELECT COUNT(*) FROM supplier_payments
+                 WHERE business_id = $1 AND supplier_id = $2) +
+                (SELECT COUNT(*) FROM supplier_month_closures
+                 WHERE business_id = $1 AND supplier_id = $2)
+                AS history_count`,
+            [businessId, supplierId]
+        );
+
+        if (Number(historyResult.rows[0].history_count) > 0) {
+            await client.query("ROLLBACK");
+
+            return res.status(409).json({
+                success: false,
+                message: "This supplier has financial history and cannot be deleted."
+            });
+        }
+
+        await client.query(
+            `DELETE FROM suppliers
+             WHERE id = $1 AND business_id = $2`,
+            [supplierId, businessId]
+        );
+
+        await client.query("COMMIT");
+
+        return res.json({
+            success: true,
+            message: "Supplier deleted successfully."
+        });
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+
+        console.error("Delete supplier error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not delete supplier."
+        });
+    } finally {
+        client.release();
+    }
+});
+
+// SUPPLIER ACCOUNT OVERVIEW
+router.get("/:id/overview", async (req, res) => {
+    const businessId = req.session.user.business_id;
+    const supplierId = validId(req.params.id);
+
+    if (!supplierId) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid supplier ID."
+        });
+    }
+
+    try {
+        const supplier = await getSupplier(
+            pool, businessId, supplierId
+        );
 
         if (!supplier) {
             return res.status(404).json({
@@ -197,125 +311,56 @@ router.delete("/:id", (req, res) => {
             });
         }
 
-        db.get(
-            `SELECT
-                (SELECT COUNT(*) FROM purchases
-                 WHERE business_id = ? AND supplier_id = ?) +
-                (SELECT COUNT(*) FROM supplier_payments
-                 WHERE business_id = ? AND supplier_id = ?) +
-                (SELECT COUNT(*) FROM supplier_month_closures
-                 WHERE business_id = ? AND supplier_id = ?) AS history_count`,
-            [businessId, supplierId, businessId, supplierId,
-                businessId, supplierId],
-            (historyError, result) => {
-                if (historyError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not check supplier history."
-                    });
-                }
-
-                if (Number(result.history_count) > 0) {
-                    return res.status(409).json({
-                        success: false,
-                        message: "This supplier has financial history and cannot be deleted."
-                    });
-                }
-
-                db.run(
-                    `DELETE FROM suppliers
-                     WHERE id = ? AND business_id = ?`,
-                    [supplierId, businessId],
-                    function (deleteError) {
-                        if (deleteError) {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Could not delete supplier."
-                            });
-                        }
-
-                        res.json({
-                            success: true,
-                            message: "Supplier deleted successfully."
-                        });
-                    }
-                );
-            }
-        );
-    });
-});
-
-// SUPPLIER ACCOUNT OVERVIEW
-router.get("/:id/overview", (req, res) => {
-    const businessId = req.session.user.business_id;
-    const supplierId = validId(req.params.id);
-
-    if (!supplierId) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid supplier ID."
-        });
-    }
-
-    getSupplier(businessId, supplierId, (error, supplier) => {
-        if (error || !supplier) {
-            return res.status(error ? 500 : 404).json({
-                success: false,
-                message: error ? "Could not load supplier." : "Supplier not found."
-            });
-        }
-
-        db.get(
+        const result = await pool.query(
             `SELECT
                 COALESCE((SELECT SUM(total_amount)
                     FROM purchases
-                    WHERE business_id = ? AND supplier_id = ?), 0)
+                    WHERE business_id = $1 AND supplier_id = $2), 0)
                     AS total_purchases,
 
                 COALESCE((SELECT SUM(amount)
                     FROM supplier_payments
-                    WHERE business_id = ? AND supplier_id = ?), 0)
+                    WHERE business_id = $1 AND supplier_id = $2), 0)
                     AS total_payments,
 
                 (SELECT COUNT(*) FROM purchases
-                    WHERE business_id = ? AND supplier_id = ?)
+                    WHERE business_id = $1 AND supplier_id = $2)
                     AS purchase_count,
 
                 (SELECT COUNT(*) FROM supplier_payments
-                    WHERE business_id = ? AND supplier_id = ?)
+                    WHERE business_id = $1 AND supplier_id = $2)
                     AS payment_count`,
-            [businessId, supplierId, businessId, supplierId,
-                businessId, supplierId, businessId, supplierId],
-            (summaryError, summary) => {
-                if (summaryError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not calculate supplier account."
-                    });
-                }
-
-                const purchases = Number(summary.total_purchases);
-                const payments = Number(summary.total_payments);
-
-                res.json({
-                    success: true,
-                    supplier,
-                    account: {
-                        total_purchases: purchases,
-                        total_payments: payments,
-                        outstanding_balance: Math.max(purchases - payments, 0),
-                        supplier_credit: Math.max(payments - purchases, 0),
-                        purchase_count: summary.purchase_count,
-                        payment_count: summary.payment_count
-                    }
-                });
-            }
+            [businessId, supplierId]
         );
-    });
+
+        const summary = result.rows[0];
+        const purchases = Number(summary.total_purchases);
+        const payments = Number(summary.total_payments);
+
+        return res.json({
+            success: true,
+            supplier,
+            account: {
+                total_purchases: purchases,
+                total_payments: payments,
+                outstanding_balance: Math.max(purchases - payments, 0),
+                supplier_credit: Math.max(payments - purchases, 0),
+                purchase_count: Number(summary.purchase_count),
+                payment_count: Number(summary.payment_count)
+            }
+        });
+    } catch (error) {
+        console.error("Supplier account overview error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not calculate supplier account."
+        });
+    }
 });
 
 // RECORD SUPPLIER PAYMENT
-router.post("/:id/payments", (req, res) => {
+router.post("/:id/payments", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierId = validId(req.params.id);
     const paymentDate = String(req.body.payment_date || "");
@@ -332,69 +377,78 @@ router.post("/:id/payments", (req, res) => {
         });
     }
 
-    getSupplier(businessId, supplierId, (error, supplier) => {
-        if (error || !supplier) {
-            return res.status(error ? 500 : 404).json({
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const supplier = await getSupplier(
+            client, businessId, supplierId, true
+        );
+
+        if (!supplier) {
+            await client.query("ROLLBACK");
+
+            return res.status(404).json({
                 success: false,
-                message: error ? "Could not check supplier." : "Supplier not found."
+                message: "Supplier not found."
             });
         }
 
-        checkClosedMonth(
-            businessId, supplierId, paymentDate,
-            (closureError, closed) => {
-                if (closureError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not check month status."
-                    });
-                }
-
-                if (closed) {
-                    return res.status(409).json({
-                        success: false,
-                        message: "This supplier's month is closed. Payments cannot be added."
-                    });
-                }
-
-                db.run(
-                    `INSERT INTO supplier_payments
-                     (business_id, supplier_id, payment_date, amount,
-                      payment_method, reference, notes, created_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        businessId,
-                        supplierId,
-                        paymentDate,
-                        amount,
-                        method || null,
-                        reference || null,
-                        notes || null,
-                        req.session.user.id
-                    ],
-                    function (insertError) {
-                        if (insertError) {
-                            console.error("Supplier payment error:", insertError.message);
-                            return res.status(500).json({
-                                success: false,
-                                message: "Could not record supplier payment."
-                            });
-                        }
-
-                        res.status(201).json({
-                            success: true,
-                            message: "Supplier payment recorded successfully.",
-                            paymentId: this.lastID
-                        });
-                    }
-                );
-            }
+        const closed = await checkClosedMonth(
+            client, businessId, supplierId, paymentDate
         );
-    });
+
+        if (closed) {
+            await client.query("ROLLBACK");
+
+            return res.status(409).json({
+                success: false,
+                message: "This supplier's month is closed. Payments cannot be added."
+            });
+        }
+
+        const result = await client.query(
+            `INSERT INTO supplier_payments
+                (business_id, supplier_id, payment_date, amount,
+                 payment_method, reference, notes, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             RETURNING id`,
+            [
+                businessId,
+                supplierId,
+                paymentDate,
+                amount,
+                method || null,
+                reference || null,
+                notes || null,
+                req.session.user.id
+            ]
+        );
+
+        await client.query("COMMIT");
+
+        return res.status(201).json({
+            success: true,
+            message: "Supplier payment recorded successfully.",
+            paymentId: result.rows[0].id
+        });
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+
+        console.error("Supplier payment error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not record supplier payment."
+        });
+    } finally {
+        client.release();
+    }
 });
 
 // SUPPLIER PAYMENT HISTORY
-router.get("/:id/payments", (req, res) => {
+router.get("/:id/payments", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierId = validId(req.params.id);
 
@@ -405,37 +459,43 @@ router.get("/:id/payments", (req, res) => {
         });
     }
 
-    getSupplier(businessId, supplierId, (error, supplier) => {
-        if (error || !supplier) {
-            return res.status(error ? 500 : 404).json({
+    try {
+        const supplier = await getSupplier(
+            pool, businessId, supplierId
+        );
+
+        if (!supplier) {
+            return res.status(404).json({
                 success: false,
-                message: error ? "Could not check supplier." : "Supplier not found."
+                message: "Supplier not found."
             });
         }
 
-        db.all(
+        const result = await pool.query(
             `SELECT id, payment_date, amount, payment_method,
                     reference, notes, created_at
              FROM supplier_payments
-             WHERE business_id = ? AND supplier_id = ?
+             WHERE business_id = $1 AND supplier_id = $2
              ORDER BY payment_date DESC, id DESC`,
-            [businessId, supplierId],
-            (paymentError, payments) => {
-                if (paymentError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not load payment history."
-                    });
-                }
-
-                res.json({ success: true, payments });
-            }
+            [businessId, supplierId]
         );
-    });
+
+        return res.json({
+            success: true,
+            payments: result.rows
+        });
+    } catch (error) {
+        console.error("Supplier payment history error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not load payment history."
+        });
+    }
 });
 
 // SUPPLIER MONTHLY NOTEBOOK
-router.get("/:id/month/:year/:month", (req, res) => {
+router.get("/:id/month/:year/:month", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierId = validId(req.params.id);
     const year = Number(req.params.year);
@@ -448,110 +508,101 @@ router.get("/:id/month/:year/:month", (req, res) => {
         });
     }
 
-    getSupplier(businessId, supplierId, (error, supplier) => {
-        if (error || !supplier) {
-            return res.status(error ? 500 : 404).json({
+    try {
+        const supplier = await getSupplier(
+            pool, businessId, supplierId
+        );
+
+        if (!supplier) {
+            return res.status(404).json({
                 success: false,
-                message: error ? "Could not check supplier." : "Supplier not found."
+                message: "Supplier not found."
             });
         }
 
-        const startDate =
-            `${year}-${String(month).padStart(2, "0")}-01`;
+        const { startDate, endDate } = monthDateRange(year, month);
 
-        const nextMonthDate = new Date(Date.UTC(year, month, 1));
-        const endDate = nextMonthDate.toISOString().slice(0, 10);
+        const [purchaseResult, paymentResult, closureResult] =
+            await Promise.all([
+                pool.query(
+                    `SELECT id, purchase_number, purchase_date,
+                            total_amount, notes
+                     FROM purchases
+                     WHERE business_id = $1 AND supplier_id = $2
+                       AND purchase_date::date >= $3::date
+                       AND purchase_date::date < $4::date
+                     ORDER BY purchase_date ASC`,
+                    [businessId, supplierId, startDate, endDate]
+                ),
 
-        db.all(
-            `SELECT id, purchase_number, purchase_date,
-                    total_amount, notes
-             FROM purchases
-             WHERE business_id = ? AND supplier_id = ?
-               AND date(purchase_date) >= ?
-               AND date(purchase_date) < ?
-             ORDER BY purchase_date ASC`,
-            [businessId, supplierId, startDate, endDate],
-            (purchaseError, purchases) => {
-                if (purchaseError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not load monthly purchases."
-                    });
-                }
-
-                db.all(
+                pool.query(
                     `SELECT id, payment_date, amount, payment_method,
                             reference, notes
                      FROM supplier_payments
-                     WHERE business_id = ? AND supplier_id = ?
-                       AND payment_date >= ? AND payment_date < ?
+                     WHERE business_id = $1 AND supplier_id = $2
+                       AND payment_date::date >= $3::date
+                       AND payment_date::date < $4::date
                      ORDER BY payment_date ASC`,
-                    [businessId, supplierId, startDate, endDate],
-                    (paymentError, payments) => {
-                        if (paymentError) {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Could not load monthly payments."
-                            });
-                        }
+                    [businessId, supplierId, startDate, endDate]
+                ),
 
-                        db.get(
-                            `SELECT id, closed_at
-                             FROM supplier_month_closures
-                             WHERE business_id = ? AND supplier_id = ?
-                               AND year = ? AND month = ?`,
-                            [businessId, supplierId, year, month],
-                            (closureError, closure) => {
-                                if (closureError) {
-                                    return res.status(500).json({
-                                        success: false,
-                                        message: "Could not load month status."
-                                    });
-                                }
+                pool.query(
+                    `SELECT id, closed_at
+                     FROM supplier_month_closures
+                     WHERE business_id = $1 AND supplier_id = $2
+                       AND year = $3 AND month = $4`,
+                    [businessId, supplierId, year, month]
+                )
+            ]);
 
-                                const purchaseTotal = purchases.reduce(
-                                    (sum, item) => sum + Number(item.total_amount),
-                                    0
-                                );
+        const purchases = purchaseResult.rows;
+        const payments = paymentResult.rows;
+        const closure = closureResult.rows[0] || null;
 
-                                const paymentTotal = payments.reduce(
-                                    (sum, item) => sum + Number(item.amount),
-                                    0
-                                );
-
-                                res.json({
-                                    success: true,
-                                    supplier,
-                                    year,
-                                    month,
-                                    purchases,
-                                    payments,
-                                    summary: {
-                                        purchase_count: purchases.length,
-                                        purchase_total: purchaseTotal,
-                                        payment_count: payments.length,
-                                        payment_total: paymentTotal,
-                                        outstanding_balance: Math.max(
-                                            purchaseTotal - paymentTotal, 0
-                                        ),
-                                        supplier_credit: Math.max(
-                                            paymentTotal - purchaseTotal, 0
-                                        )
-                                    },
-                                    closed: Boolean(closure),
-                                    closure: closure || null
-                                });
-                            }
-                        );
-                    }
-                );
-            }
+        const purchaseTotal = purchases.reduce(
+            (sum, item) => sum + Number(item.total_amount),
+            0
         );
-    });
+
+        const paymentTotal = payments.reduce(
+            (sum, item) => sum + Number(item.amount),
+            0
+        );
+
+        return res.json({
+            success: true,
+            supplier,
+            year,
+            month,
+            purchases,
+            payments,
+            summary: {
+                purchase_count: purchases.length,
+                purchase_total: purchaseTotal,
+                payment_count: payments.length,
+                payment_total: paymentTotal,
+                outstanding_balance: Math.max(
+                    purchaseTotal - paymentTotal, 0
+                ),
+                supplier_credit: Math.max(
+                    paymentTotal - purchaseTotal, 0
+                )
+            },
+            closed: Boolean(closure),
+            closure
+        });
+    } catch (error) {
+        console.error("Supplier monthly notebook error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not load supplier monthly notebook."
+        });
+    }
 });
 
 // CLOSE SUPPLIER MONTH PERMANENTLY
-router.post("/:id/close-month", (req, res) => {
+router.post("/:id/close-month", async (req, res) => {
     const businessId = req.session.user.business_id;
     const supplierId = validId(req.params.id);
     const year = Number(req.body.year);
@@ -564,96 +615,102 @@ router.post("/:id/close-month", (req, res) => {
         });
     }
 
-    getSupplier(businessId, supplierId, (error, supplier) => {
-        if (error || !supplier) {
-            return res.status(error ? 500 : 404).json({
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const supplier = await getSupplier(
+            client, businessId, supplierId, true
+        );
+
+        if (!supplier) {
+            await client.query("ROLLBACK");
+
+            return res.status(404).json({
                 success: false,
-                message: error ? "Could not check supplier." : "Supplier not found."
+                message: "Supplier not found."
             });
         }
 
-        const startDate =
-            `${year}-${String(month).padStart(2, "0")}-01`;
+        const { startDate, endDate } = monthDateRange(year, month);
 
-        const endDate =
-            new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
-
-        db.get(
+        const summaryResult = await client.query(
             `SELECT
                 (SELECT COUNT(*) FROM purchases
-                 WHERE business_id = ? AND supplier_id = ?
-                   AND date(purchase_date) >= ?
-                   AND date(purchase_date) < ?) AS purchase_count,
+                 WHERE business_id = $1 AND supplier_id = $2
+                   AND purchase_date::date >= $3::date
+                   AND purchase_date::date < $4::date) AS purchase_count,
 
                 (SELECT COALESCE(SUM(total_amount), 0) FROM purchases
-                 WHERE business_id = ? AND supplier_id = ?
-                   AND date(purchase_date) >= ?
-                   AND date(purchase_date) < ?) AS purchase_total,
+                 WHERE business_id = $1 AND supplier_id = $2
+                   AND purchase_date::date >= $3::date
+                   AND purchase_date::date < $4::date) AS purchase_total,
 
                 (SELECT COUNT(*) FROM supplier_payments
-                 WHERE business_id = ? AND supplier_id = ?
-                   AND payment_date >= ? AND payment_date < ?) AS payment_count,
+                 WHERE business_id = $1 AND supplier_id = $2
+                   AND payment_date::date >= $3::date
+                   AND payment_date::date < $4::date) AS payment_count,
 
                 (SELECT COALESCE(SUM(amount), 0) FROM supplier_payments
-                 WHERE business_id = ? AND supplier_id = ?
-                   AND payment_date >= ? AND payment_date < ?) AS payment_total`,
-            [
-                businessId, supplierId, startDate, endDate,
-                businessId, supplierId, startDate, endDate,
-                businessId, supplierId, startDate, endDate,
-                businessId, supplierId, startDate, endDate
-            ],
-            (summaryError, summary) => {
-                if (summaryError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not prepare month closure."
-                    });
-                }
-
-                db.run(
-                    `INSERT INTO supplier_month_closures
-                     (business_id, supplier_id, year, month, closed_by)
-                     VALUES (?, ?, ?, ?, ?)`,
-                    [
-                        businessId,
-                        supplierId,
-                        year,
-                        month,
-                        req.session.user.id
-                    ],
-                    function (closeError) {
-                        if (closeError) {
-                            if (closeError.message.includes("UNIQUE")) {
-                                return res.status(409).json({
-                                    success: false,
-                                    message: "This supplier month is already closed."
-                                });
-                            }
-
-                            console.error("Month closure error:", closeError.message);
-                            return res.status(500).json({
-                                success: false,
-                                message: "Could not close supplier month."
-                            });
-                        }
-
-                        res.json({
-                            success: true,
-                            message: "Supplier month permanently closed.",
-                            closureId: this.lastID,
-                            summary: {
-                                purchase_count: summary.purchase_count,
-                                purchase_total: Number(summary.purchase_total),
-                                payment_count: summary.payment_count,
-                                payment_total: Number(summary.payment_total)
-                            }
-                        });
-                    }
-                );
-            }
+                 WHERE business_id = $1 AND supplier_id = $2
+                   AND payment_date::date >= $3::date
+                   AND payment_date::date < $4::date) AS payment_total`,
+            [businessId, supplierId, startDate, endDate]
         );
-    });
+
+        const closureResult = await client.query(
+            `INSERT INTO supplier_month_closures
+                (business_id, supplier_id, year, month, closed_by)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (business_id, supplier_id, year, month)
+             DO NOTHING
+             RETURNING id`,
+            [
+                businessId,
+                supplierId,
+                year,
+                month,
+                req.session.user.id
+            ]
+        );
+
+        if (closureResult.rowCount === 0) {
+            await client.query("ROLLBACK");
+
+            return res.status(409).json({
+                success: false,
+                message: "This supplier month is already closed."
+            });
+        }
+
+        await client.query("COMMIT");
+
+        const summary = summaryResult.rows[0];
+
+        return res.json({
+            success: true,
+            message: "Supplier month permanently closed.",
+            closureId: closureResult.rows[0].id,
+            summary: {
+                purchase_count: Number(summary.purchase_count),
+                purchase_total: Number(summary.purchase_total),
+                payment_count: Number(summary.payment_count),
+                payment_total: Number(summary.payment_total)
+            }
+        });
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+
+        console.error("Supplier month closure error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not close supplier month."
+        });
+    } finally {
+        client.release();
+    }
 });
 
 module.exports = router;

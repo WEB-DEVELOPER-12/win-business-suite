@@ -2,7 +2,7 @@
 "use strict";
 
 const express = require("express");
-const db = require("../config/database");
+const pool = require("../config/postgresDatabase");
 const requireAuth = require("../middleware/requireAuth");
 
 const {
@@ -17,22 +17,27 @@ const router = express.Router();
 
 router.use(requireAuth);
 
-function get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.get(sql, params, (error, row) => {
-            if (error) return reject(error);
-            resolve(row);
-        });
-    });
+function convertPlaceholders(sql) {
+    let index = 0;
+    return sql.replace(/\?/g, () => `$${++index}`);
 }
 
-function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (error, rows) => {
-            if (error) return reject(error);
-            resolve(rows || []);
-        });
-    });
+async function get(sql, params = []) {
+    const result = await pool.query(
+        convertPlaceholders(sql),
+        params
+    );
+
+    return result.rows[0] || null;
+}
+
+async function all(sql, params = []) {
+    const result = await pool.query(
+        convertPlaceholders(sql),
+        params
+    );
+
+    return result.rows;
 }
 
 function validId(value) {
@@ -309,9 +314,6 @@ router.get("/reports", async (req, res) => {
                 [businessId]
             ),
 
-            // TOP 10 DEBTORS
-            // Uses WHERE instead of HAVING because this
-            // outer query is not an aggregate query.
             all(
                 `SELECT
                     debtor_totals.id,

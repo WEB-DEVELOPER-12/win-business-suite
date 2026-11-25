@@ -1,6 +1,9 @@
+
+"use strict";
+
 const express = require("express");
 const crypto = require("crypto");
-const db = require("../config/database");
+const pool = require("../config/postgresDatabase");
 const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
@@ -26,150 +29,143 @@ function isValidDate(value) {
 }
 
 // LOAD PRODUCTS AND SUPPLIERS FOR THE PURCHASE FORM
-router.get("/options", (req, res) => {
-    const businessId = req.session.user.business_id;
+router.get("/options", async (req, res) => {
+    try {
+        const businessId = req.session.user.business_id;
 
-    db.all(
-        `SELECT id, product_name, buying_price, stock_quantity
-         FROM products
-         WHERE business_id = ?
-         ORDER BY product_name ASC`,
-        [businessId],
-        (productError, products) => {
-            if (productError) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not load products."
-                });
-            }
-
-            db.all(
+        const [productResult, supplierResult] = await Promise.all([
+            pool.query(
+                `SELECT id, product_name, buying_price, stock_quantity
+                 FROM products
+                 WHERE business_id = $1
+                 ORDER BY product_name ASC`,
+                [businessId]
+            ),
+            pool.query(
                 `SELECT id, supplier_name, phone
                  FROM suppliers
-                 WHERE business_id = ?
+                 WHERE business_id = $1
                  ORDER BY supplier_name ASC`,
-                [businessId],
-                (supplierError, suppliers) => {
-                    if (supplierError) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Could not load suppliers."
-                        });
-                    }
+                [businessId]
+            )
+        ]);
 
-                    res.json({
-                        success: true,
-                        products,
-                        suppliers
-                    });
-                }
-            );
-        }
-    );
+        return res.json({
+            success: true,
+            products: productResult.rows,
+            suppliers: supplierResult.rows
+        });
+
+    } catch (error) {
+        console.error("Purchase options error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not load purchase options."
+        });
+    }
 });
 
 // GET PURCHASE HISTORY
-router.get("/", (req, res) => {
-    const businessId = req.session.user.business_id;
+router.get("/", async (req, res) => {
+    try {
+        const businessId = req.session.user.business_id;
 
-    db.all(
-        `SELECT
-            p.id,
-            p.purchase_number,
-            p.total_amount,
-            p.purchase_date,
-            p.notes,
-            s.supplier_name
-         FROM purchases p
-         LEFT JOIN suppliers s ON s.id = p.supplier_id
-         WHERE p.business_id = ?
-         ORDER BY p.id DESC`,
-        [businessId],
-        (error, purchases) => {
-            if (error) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not load purchase history."
-                });
-            }
+        const result = await pool.query(
+            `SELECT
+                p.id,
+                p.purchase_number,
+                p.total_amount,
+                p.purchase_date,
+                p.notes,
+                s.supplier_name
+             FROM purchases p
+             LEFT JOIN suppliers s ON s.id = p.supplier_id
+             WHERE p.business_id = $1
+             ORDER BY p.id DESC`,
+            [businessId]
+        );
 
-            res.json({
-                success: true,
-                purchases
-            });
-        }
-    );
+        return res.json({
+            success: true,
+            purchases: result.rows
+        });
+
+    } catch (error) {
+        console.error("Purchase history error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not load purchase history."
+        });
+    }
 });
 
 // GET PURCHASE DETAILS
-router.get("/:id", (req, res) => {
-    const businessId = req.session.user.business_id;
-    const purchaseId = Number(req.params.id);
+router.get("/:id", async (req, res) => {
+    try {
+        const businessId = req.session.user.business_id;
+        const purchaseId = Number(req.params.id);
 
-    if (!Number.isInteger(purchaseId) || purchaseId <= 0) {
-        return res.status(400).json({
+        if (!Number.isInteger(purchaseId) || purchaseId <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid purchase ID."
+            });
+        }
+
+        const purchaseResult = await pool.query(
+            `SELECT
+                p.*,
+                s.supplier_name,
+                s.phone AS supplier_phone
+             FROM purchases p
+             LEFT JOIN suppliers s ON s.id = p.supplier_id
+             WHERE p.id = $1 AND p.business_id = $2`,
+            [purchaseId, businessId]
+        );
+
+        const purchase = purchaseResult.rows[0];
+
+        if (!purchase) {
+            return res.status(404).json({
+                success: false,
+                message: "Purchase not found."
+            });
+        }
+
+        const itemsResult = await pool.query(
+            `SELECT
+                id,
+                product_id,
+                product_name,
+                quantity,
+                unit_cost,
+                line_total
+             FROM purchase_items
+             WHERE purchase_id = $1
+             ORDER BY id ASC`,
+            [purchaseId]
+        );
+
+        return res.json({
+            success: true,
+            purchase,
+            items: itemsResult.rows
+        });
+
+    } catch (error) {
+        console.error("Purchase details error:", error.message);
+
+        return res.status(500).json({
             success: false,
-            message: "Invalid purchase ID."
+            message: "Could not load purchase."
         });
     }
-
-    db.get(
-        `SELECT
-            p.*,
-            s.supplier_name,
-            s.phone AS supplier_phone
-         FROM purchases p
-         LEFT JOIN suppliers s ON s.id = p.supplier_id
-         WHERE p.id = ? AND p.business_id = ?`,
-        [purchaseId, businessId],
-        (error, purchase) => {
-            if (error) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not load purchase."
-                });
-            }
-
-            if (!purchase) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Purchase not found."
-                });
-            }
-
-            db.all(
-                `SELECT
-                    id,
-                    product_id,
-                    product_name,
-                    quantity,
-                    unit_cost,
-                    line_total
-                 FROM purchase_items
-                 WHERE purchase_id = ?
-                 ORDER BY id ASC`,
-                [purchaseId],
-                (itemsError, items) => {
-                    if (itemsError) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Could not load purchase items."
-                        });
-                    }
-
-                    res.json({
-                        success: true,
-                        purchase,
-                        items
-                    });
-                }
-            );
-        }
-    );
 });
 
 // CREATE A PURCHASE AND INCREASE STOCK
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const businessId = req.session.user.business_id;
     const userId = req.session.user.id;
 
@@ -192,10 +188,7 @@ router.post("/", (req, res) => {
             ? null
             : req.body.purchase_date;
 
-    if (
-        purchaseDate !== null &&
-        !isValidDate(purchaseDate)
-    ) {
+    if (purchaseDate !== null && !isValidDate(purchaseDate)) {
         return res.status(400).json({
             success: false,
             message: "Enter a valid purchase date."
@@ -289,7 +282,6 @@ router.post("/", (req, res) => {
     }
 
     const productIds = cleanItems.map(item => item.productId);
-    const placeholders = productIds.map(() => "?").join(", ");
 
     const purchaseNumber =
         "PUR-" +
@@ -297,272 +289,188 @@ router.post("/", (req, res) => {
         "-" +
         crypto.randomBytes(3).toString("hex").toUpperCase();
 
-    const createPurchase = () => {
-        db.all(
-            `SELECT id, product_name
-             FROM products
-             WHERE business_id = ?
-             AND id IN (${placeholders})`,
-            [businessId, ...productIds],
-            (productError, products) => {
-                if (productError) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Could not verify purchase products."
-                    });
-                }
+    const client = await pool.connect();
+    let transactionStarted = false;
 
-                if (products.length !== cleanItems.length) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "One or more products do not belong to your business."
-                    });
-                }
+    try {
+        await client.query("BEGIN");
+        transactionStarted = true;
 
-                const productMap = new Map(
-                    products.map(product => [product.id, product])
-                );
+        // VERIFY AND LOCK THE SUPPLIER, IF PROVIDED
+        if (supplierId !== null) {
+            const supplierResult = await client.query(
+                `SELECT id
+                 FROM suppliers
+                 WHERE id = $1 AND business_id = $2
+                 FOR UPDATE`,
+                [supplierId, businessId]
+            );
 
-                db.serialize(() => {
-                    db.run("BEGIN IMMEDIATE TRANSACTION", (beginError) => {
-                        if (beginError) {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Could not start purchase transaction."
-                            });
-                        }
+            if (supplierResult.rowCount !== 1) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
 
-                        let finished = false;
-
-                        const rollback = (status, message) => {
-                            if (finished) return;
-                            finished = true;
-
-                            db.run("ROLLBACK", () => {
-                                res.status(status).json({
-                                    success: false,
-                                    message
-                                });
-                            });
-                        };
-
-                        // CHECK WHETHER THE SUPPLIER'S MONTH IS CLOSED
-                        const savePurchase = () => {
-                            db.run(
-                                `INSERT INTO purchases (
-                                    business_id,
-                                    supplier_id,
-                                    purchase_number,
-                                    total_amount,
-                                    purchase_date,
-                                    notes,
-                                    created_by
-                                ) VALUES (
-                                    ?, ?, ?, ?,
-                                    COALESCE(?, date('now', 'localtime')),
-                                    ?, ?
-                                )`,
-                                [
-                                    businessId,
-                                    supplierId,
-                                    purchaseNumber,
-                                    totalAmount,
-                                    purchaseDate,
-                                    notes,
-                                    userId
-                                ],
-                                function (purchaseError) {
-                                    if (purchaseError) {
-                                        return rollback(
-                                            500,
-                                            "Could not save purchase."
-                                        );
-                                    }
-
-                                    const purchaseId = this.lastID;
-                                    let itemIndex = 0;
-
-                                    const saveNextItem = () => {
-                                        if (itemIndex >= cleanItems.length) {
-                                            if (finished) return;
-
-                                            db.run("COMMIT", (commitError) => {
-                                                if (commitError) {
-                                                    return rollback(
-                                                        500,
-                                                        "Could not complete purchase."
-                                                    );
-                                                }
-
-                                                finished = true;
-
-                                                res.status(201).json({
-                                                    success: true,
-                                                    message: "Purchase recorded and stock updated successfully.",
-                                                    purchase_id: purchaseId,
-                                                    purchase_number: purchaseNumber,
-                                                    total_amount: totalAmount
-                                                });
-                                            });
-
-                                            return;
-                                        }
-
-                                        const item = cleanItems[itemIndex];
-                                        const product = productMap.get(item.productId);
-
-                                        db.run(
-                                            `INSERT INTO purchase_items (
-                                                purchase_id,
-                                                product_id,
-                                                product_name,
-                                                quantity,
-                                                unit_cost,
-                                                line_total
-                                            ) VALUES (?, ?, ?, ?, ?, ?)`,
-                                            [
-                                                purchaseId,
-                                                item.productId,
-                                                product.product_name,
-                                                item.quantity,
-                                                item.unitCost,
-                                                item.lineTotal
-                                            ],
-                                            (itemError) => {
-                                                if (itemError) {
-                                                    return rollback(
-                                                        500,
-                                                        "Could not save purchase items."
-                                                    );
-                                                }
-
-                                                db.run(
-                                                    `UPDATE products
-                                                     SET stock_quantity = stock_quantity + ?
-                                                     WHERE id = ? AND business_id = ?`,
-                                                    [
-                                                        item.quantity,
-                                                        item.productId,
-                                                        businessId
-                                                    ],
-                                                    function (stockError) {
-                                                        if (
-                                                            stockError ||
-                                                            this.changes !== 1
-                                                        ) {
-                                                            return rollback(
-                                                                500,
-                                                                "Could not update product stock."
-                                                            );
-                                                        }
-
-                                                        itemIndex++;
-                                                        saveNextItem();
-                                                    }
-                                                );
-                                            }
-                                        );
-                                    };
-
-                                    saveNextItem();
-                                }
-                            );
-                        };
-
-                        if (supplierId === null) {
-                            return savePurchase();
-                        }
-
-                        const selectedDate =
-                            purchaseDate ||
-                            null;
-
-                        const checkClosedMonth = (dateToCheck) => {
-                            db.get(
-                                `SELECT id
-                                 FROM supplier_month_closures
-                                 WHERE business_id = ?
-                                   AND supplier_id = ?
-                                   AND year = CAST(strftime('%Y', ?) AS INTEGER)
-                                   AND month = CAST(strftime('%m', ?) AS INTEGER)`,
-                                [
-                                    businessId,
-                                    supplierId,
-                                    dateToCheck,
-                                    dateToCheck
-                                ],
-                                (closureError, closure) => {
-                                    if (closureError) {
-                                        return rollback(
-                                            500,
-                                            "Could not check the supplier's month status."
-                                        );
-                                    }
-
-                                    if (closure) {
-                                        return rollback(
-                                            409,
-                                            "This supplier's month is closed. You cannot add purchases to it."
-                                        );
-                                    }
-
-                                    savePurchase();
-                                }
-                            );
-                        };
-
-                        if (selectedDate) {
-                            return checkClosedMonth(selectedDate);
-                        }
-
-                        db.get(
-                            "SELECT date('now', 'localtime') AS today",
-                            [],
-                            (dateError, result) => {
-                                if (dateError || !result) {
-                                    return rollback(
-                                        500,
-                                        "Could not determine today's date."
-                                    );
-                                }
-
-                                checkClosedMonth(result.today);
-                            }
-                        );
-                    });
-                });
-            }
-        );
-    };
-
-    // VERIFY SUPPLIER BELONGS TO THIS BUSINESS
-    if (supplierId === null) {
-        return createPurchase();
-    }
-
-    db.get(
-        `SELECT id
-         FROM suppliers
-         WHERE id = ? AND business_id = ?`,
-        [supplierId, businessId],
-        (supplierError, supplier) => {
-            if (supplierError) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not verify supplier."
-                });
-            }
-
-            if (!supplier) {
                 return res.status(400).json({
                     success: false,
                     message: "Supplier not found in your business."
                 });
             }
-
-            createPurchase();
         }
-    );
+
+        // VERIFY AND LOCK ALL PRODUCTS BELONGING TO THIS BUSINESS
+        const productResult = await client.query(
+            `SELECT id, product_name
+             FROM products
+             WHERE business_id = $1
+               AND id = ANY($2::int[])
+             ORDER BY id
+             FOR UPDATE`,
+            [businessId, productIds]
+        );
+
+        if (productResult.rows.length !== cleanItems.length) {
+            await client.query("ROLLBACK");
+            transactionStarted = false;
+
+            return res.status(400).json({
+                success: false,
+                message: "One or more products do not belong to your business."
+            });
+        }
+
+        const productMap = new Map(
+            productResult.rows.map(product => [
+                Number(product.id),
+                product
+            ])
+        );
+
+        // CHECK WHETHER THE SUPPLIER'S MONTH IS CLOSED
+        if (supplierId !== null) {
+            const closureResult = await client.query(
+                `SELECT id
+                 FROM supplier_month_closures
+                 WHERE business_id = $1
+                   AND supplier_id = $2
+                   AND year = EXTRACT(
+                       YEAR FROM COALESCE($3::date, CURRENT_DATE)
+                   )::integer
+                   AND month = EXTRACT(
+                       MONTH FROM COALESCE($3::date, CURRENT_DATE)
+                   )::integer
+                 LIMIT 1`,
+                [businessId, supplierId, purchaseDate]
+            );
+
+            if (closureResult.rowCount > 0) {
+                await client.query("ROLLBACK");
+                transactionStarted = false;
+
+                return res.status(409).json({
+                    success: false,
+                    message: "This supplier's month is closed. You cannot add purchases to it."
+                });
+            }
+        }
+
+        // CREATE PURCHASE
+        const purchaseResult = await client.query(
+            `INSERT INTO purchases (
+                business_id,
+                supplier_id,
+                purchase_number,
+                total_amount,
+                purchase_date,
+                notes,
+                created_by
+             ) VALUES (
+                $1, $2, $3, $4,
+                COALESCE($5::date, CURRENT_DATE),
+                $6, $7
+             )
+             RETURNING id`,
+            [
+                businessId,
+                supplierId,
+                purchaseNumber,
+                totalAmount,
+                purchaseDate,
+                notes,
+                userId
+            ]
+        );
+
+        const purchaseId = purchaseResult.rows[0].id;
+
+        // SAVE ITEMS AND INCREASE STOCK
+        for (const item of cleanItems) {
+            const product = productMap.get(item.productId);
+
+            await client.query(
+                `INSERT INTO purchase_items (
+                    purchase_id,
+                    product_id,
+                    product_name,
+                    quantity,
+                    unit_cost,
+                    line_total
+                 ) VALUES ($1, $2, $3, $4, $5, $6)`,
+                [
+                    purchaseId,
+                    item.productId,
+                    product.product_name,
+                    item.quantity,
+                    item.unitCost,
+                    item.lineTotal
+                ]
+            );
+
+            const stockResult = await client.query(
+                `UPDATE products
+                 SET stock_quantity = stock_quantity + $1
+                 WHERE id = $2 AND business_id = $3`,
+                [
+                    item.quantity,
+                    item.productId,
+                    businessId
+                ]
+            );
+
+            if (stockResult.rowCount !== 1) {
+                throw new Error("Could not update product stock.");
+            }
+        }
+
+        await client.query("COMMIT");
+        transactionStarted = false;
+
+        return res.status(201).json({
+            success: true,
+            message: "Purchase recorded and stock updated successfully.",
+            purchase_id: purchaseId,
+            purchase_number: purchaseNumber,
+            total_amount: totalAmount
+        });
+
+    } catch (error) {
+        if (transactionStarted) {
+            try {
+                await client.query("ROLLBACK");
+            } catch (rollbackError) {
+                console.error("Purchase rollback error:", rollbackError.message);
+            }
+        }
+
+        console.error("Purchase creation error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not complete purchase."
+        });
+
+    } finally {
+        client.release();
+    }
 });
 
 module.exports = router;
