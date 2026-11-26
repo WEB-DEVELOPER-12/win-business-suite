@@ -69,6 +69,10 @@ const requireSubscription = require("./src/middleware/requireSubscription");
 const businessAccessGuards = require("./src/middleware/businessAccessGuards");
 
 const app = express();
+
+// Trust Hostless's HTTPS reverse proxy for secure session cookies.
+app.set("trust proxy", 1);
+
 const PORT = process.env.PORT || 3000;
 
 app.disable("x-powered-by");
