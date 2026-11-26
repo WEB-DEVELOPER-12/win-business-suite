@@ -8,6 +8,7 @@ const helmet = require("helmet");
 
 const pool = require("./src/config/postgresDatabase");
 const initializePostgresDatabase = require("./src/config/postgresInitDatabase");
+const migrateLoginConfirmationCodes = require("./src/config/loginConfirmationCodeMigration");
 const PostgresSessionStore = require("./src/services/postgresSessionStore");
 const createCsrfProtection = require("./src/middleware/csrfProtection");
 
@@ -183,6 +184,9 @@ async function startServer() {
     let server;
 
     try {
+        // Create the login confirmation code tables.
+        await migrateLoginConfirmationCodes();
+
         // Verify the PostgreSQL connection, schema and triggers.
         await initializePostgresDatabase();
 
@@ -190,6 +194,7 @@ async function startServer() {
         await businessSessionStore.initialize();
 
         console.log("PostgreSQL database initialization: completed");
+        console.log("Login confirmation code tables: enabled");
         console.log("Persistent PostgreSQL session storage: enabled");
         console.log("Helmet HTTP security headers: enabled");
         console.log("CSRF origin protection: enabled");
@@ -206,7 +211,7 @@ async function startServer() {
             console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 
             console.log("Database: PostgreSQL");
-            console.log("Persistent business session storage: enabled");
+            console.log("Persistent business-user sessions: enabled");
             console.log("Session duration: 8 hours");
 
             console.log("Helmet HTTP security headers: enabled");

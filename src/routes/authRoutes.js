@@ -8,7 +8,8 @@ const {
 } = require("../services/emailVerificationService");
 
 const {
-    sendLoginConfirmationEmail
+    sendLoginConfirmationEmail,
+    verifyLoginConfirmationCode
 } = require("../services/loginConfirmationService");
 
 const {
@@ -481,7 +482,7 @@ router.post("/verify-email", async (req, res) => {
     }
 });
 
-// RESEND VERIFICATION EMAIL
+// RESEND REGISTRATION VERIFICATION EMAIL
 router.post("/resend-verification", async (req, res) => {
     try {
         const email = req.body.email;
@@ -547,7 +548,7 @@ router.post("/resend-verification", async (req, res) => {
 
 // LOGIN
 // Password verification does not create an authenticated session.
-// A fresh email confirmation link is required for every login.
+// A fresh 6-digit email confirmation code is required for every login.
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -665,7 +666,8 @@ router.post("/login", async (req, res) => {
             return res.json({
                 success: true,
                 confirmationRequired: true,
-                message: "A fresh login confirmation link has been sent to your email. It expires in 10 minutes. Open it and press Confirm Login to continue."
+                email: user.email,
+                message: "A 6-digit login confirmation code has been sent to your email. It expires in 10 minutes. Enter it on the confirmation page to continue."
             });
         } catch (emailError) {
             console.error(
@@ -695,35 +697,116 @@ router.post("/login", async (req, res) => {
     }
 });
 
-// CONFIRM LOGIN
-// The session is created only after explicit email confirmation.
-router.post("/confirm-login", async (req, res) => {
+// RESEND LOGIN CONFIRMATION CODE
+// This endpoint is separate from registration email verification.
+router.post("/resend-login-code", async (req, res) => {
     try {
-        const { token } = req.body;
+        const { email } = req.body;
 
-        if (typeof token !== "string" || !token) {
+        if (typeof email !== "string" || !email.trim()) {
             return res.status(400).json({
                 success: false,
-                message: "A login confirmation token is required."
+                message: "Please enter your email address."
             });
         }
 
-        const userId = await consumeEmailToken(
-            token,
-            "login_confirmation"
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const genericMessage =
+            "If a verified account exists for this email, a new login code will be sent.";
+
+        const user = await get(
+            `SELECT id, full_name, email, email_verified
+             FROM users
+             WHERE email = $1`,
+            [normalizedEmail]
         );
 
-        if (!userId) {
+        if (!user || Number(user.email_verified) !== 1) {
+            return res.json({
+                success: true,
+                message: genericMessage
+            });
+        }
+
+        try {
+            await sendLoginConfirmationEmail(user);
+
             await recordSecurityEvent(
-                null,
-                null,
-                "login_confirmation_invalid",
+                user.id,
+                user.email,
+                "login_confirmation_code_resent",
+                req
+            );
+        } catch (emailError) {
+            console.error(
+                "Resend login code failed:",
+                emailError.message
+            );
+        }
+
+        return res.json({
+            success: true,
+            message: genericMessage
+        });
+    } catch (error) {
+        console.error(
+            "Resend login code error:",
+            error.message
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not process your request. Please try again."
+        });
+    }
+});
+
+// CONFIRM LOGIN
+// The session is created only after the 6-digit email code is verified.
+router.post("/confirm-login", async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        if (
+            typeof email !== "string" ||
+            typeof code !== "string" ||
+            !email.trim() ||
+            !/^\d{6}$/.test(code)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Enter your email address and the 6-digit login code."
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const verification = await verifyLoginConfirmationCode(
+            normalizedEmail,
+            code
+        );
+
+        if (!verification.success) {
+            await recordSecurityEvent(
+                verification.userId || null,
+                normalizedEmail,
+                verification.reason === "too_many_attempts"
+                    ? "login_confirmation_attempts_exceeded"
+                    : "login_confirmation_code_invalid",
                 req
             );
 
+            if (verification.reason === "too_many_attempts") {
+                return res.status(429).json({
+                    success: false,
+                    message: "Too many incorrect codes. Please wait 20 minutes before trying again."
+                });
+            }
+
             return res.status(400).json({
                 success: false,
-                message: "This login confirmation link is invalid, expired, or has already been used. Please log in again."
+                message: "The login code is invalid or expired. Check the code or request a new one."
             });
         }
 
@@ -737,7 +820,7 @@ router.post("/confirm-login", async (req, res) => {
                 email_verified
              FROM users
              WHERE id = $1`,
-            [userId]
+            [verification.userId]
         );
 
         if (!user || Number(user.email_verified) !== 1) {

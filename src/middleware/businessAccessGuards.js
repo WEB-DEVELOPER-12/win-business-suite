@@ -1,7 +1,7 @@
+
 "use strict";
 
 const express = require("express");
-const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const pool = require("../config/postgresDatabase");
 
@@ -82,12 +82,10 @@ router.post("/login", async (req, res, next) => {
             [normalizedEmail]
         );
 
-        // Let the existing login route handle unknown accounts.
         if (!account || account.account_status !== "suspended") {
             return next();
         }
 
-        // Verify the password before revealing the suspension status.
         const passwordMatches = await bcrypt.compare(
             password,
             account.password_hash
@@ -118,49 +116,36 @@ router.post("/login", async (req, res, next) => {
 
 // ==========================================
 // LOGIN CONFIRMATION GUARD
+// Uses the email attached to the 6-digit code.
+// Does not consume or verify the code.
 // ==========================================
 
 router.post("/confirm-login", async (req, res, next) => {
     try {
-        const token = req.body?.token;
+        const email = req.body?.email;
+        const code = req.body?.code;
 
         if (
-            typeof token !== "string" ||
-            token.length < 20 ||
-            token.length > 200
+            typeof email !== "string" ||
+            typeof code !== "string" ||
+            !email.trim() ||
+            !/^\d{6}$/.test(code)
         ) {
             return next();
         }
 
-        const secret = process.env.EMAIL_VERIFICATION_SECRET;
+        const normalizedEmail = email.trim().toLowerCase();
 
-        if (!secret || secret.length < 32) {
-            throw new Error(
-                "EMAIL_VERIFICATION_SECRET is missing or too short."
-            );
-        }
-
-        const tokenHash = crypto
-            .createHmac("sha256", secret)
-            .update(token)
-            .digest("hex");
-
-        // Inspect an unused, unexpired login token without consuming it.
         const account = await get(
             `SELECT
                 users.id,
                 businesses.account_status
-             FROM email_tokens
-             INNER JOIN users
-                ON users.id = email_tokens.user_id
+             FROM users
              INNER JOIN businesses
                 ON businesses.id = users.business_id
-             WHERE email_tokens.token_hash = $1
-               AND email_tokens.purpose = 'login_confirmation'
-               AND email_tokens.used_at IS NULL
-               AND email_tokens.expires_at > CURRENT_TIMESTAMP
+             WHERE users.email = $1
              LIMIT 1`,
-            [tokenHash]
+            [normalizedEmail]
         );
 
         if (!account || account.account_status !== "suspended") {

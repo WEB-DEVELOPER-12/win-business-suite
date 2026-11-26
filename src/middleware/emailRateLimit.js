@@ -1,4 +1,6 @@
 
+"use strict";
+
 const { checkLimit } = require("../services/emailRateLimitService");
 
 const LIMITS = {
@@ -9,6 +11,7 @@ const LIMITS = {
             blockMinutes: 60
         }
     },
+
     "/login": {
         ip: {
             maxRequests: 10,
@@ -21,6 +24,7 @@ const LIMITS = {
             blockMinutes: 15
         }
     },
+
     "/resend-verification": {
         ip: {
             maxRequests: 3,
@@ -33,6 +37,20 @@ const LIMITS = {
             blockMinutes: 30
         }
     },
+
+    "/resend-login-code": {
+        ip: {
+            maxRequests: 3,
+            windowMinutes: 15,
+            blockMinutes: 30
+        },
+        email: {
+            maxRequests: 3,
+            windowMinutes: 15,
+            blockMinutes: 30
+        }
+    },
+
     "/verify-email": {
         ip: {
             maxRequests: 10,
@@ -40,6 +58,7 @@ const LIMITS = {
             blockMinutes: 15
         }
     },
+
     "/confirm-login": {
         ip: {
             maxRequests: 10,
@@ -106,7 +125,6 @@ async function emailRateLimit(req, res, next) {
     } catch (error) {
         console.error("Email rate-limit check failed:", error.message);
 
-        // Fail closed when the security check cannot be completed.
         return res.status(503).json({
             success: false,
             message: "We cannot process this request securely right now. Please try again later."

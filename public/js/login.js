@@ -37,16 +37,25 @@ if (loginForm && loginButton && loginMessage) {
             }
 
             if (response.ok && result.success && result.confirmationRequired) {
+                const email = result.email || formData.email;
+
                 loginMessage.textContent =
-                    "A login confirmation link has been sent to your email. Open it and press Confirm Login to complete sign-in.";
+                    "A six-digit login confirmation code has been sent to your email. Redirecting to the confirmation page...";
 
                 loginMessage.style.color = "green";
-            } else {
-                loginMessage.textContent =
-                    result.message || "Login could not be completed.";
 
-                loginMessage.style.color = "red";
+                window.location.replace(
+                    "/confirm-login.html?email=" +
+                    encodeURIComponent(email)
+                );
+
+                return;
             }
+
+            loginMessage.textContent =
+                result.message || "Login could not be completed.";
+
+            loginMessage.style.color = "red";
 
         } catch (error) {
             console.error("Login request failed:", error);

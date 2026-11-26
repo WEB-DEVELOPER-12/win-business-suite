@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#101d3a">
     <title>Confirm Login - WIN Business Suite</title>
+
     <style>
         * {
             box-sizing: border-box;
@@ -70,6 +71,41 @@
             font-size: 15px;
         }
 
+        .email-display {
+            margin: 18px 0;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f3f6fb;
+            color: #17233c;
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        label {
+            display: block;
+            margin: 20px 0 8px;
+            text-align: left;
+            color: #17233c;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 9px;
+            text-align: center;
+        }
+
+        input:focus {
+            outline: 2px solid #13b9df;
+            border-color: #13b9df;
+        }
+
         button {
             width: 100%;
             margin-top: 18px;
@@ -83,13 +119,22 @@
             cursor: pointer;
         }
 
-        button:hover {
+        button:hover:not(:disabled) {
             background: #079fc2;
         }
 
         button:disabled {
             cursor: not-allowed;
             opacity: 0.65;
+        }
+
+        #resendLoginCodeButton {
+            margin-top: 10px;
+            background: #101d3a;
+        }
+
+        #resendLoginCodeButton:hover:not(:disabled) {
+            background: #20365f;
         }
 
         #confirmationMessage {
@@ -118,6 +163,7 @@
         }
     </style>
 </head>
+
 <body>
     <main class="confirmation-card">
         <div class="brand">WIN <span>Business Suite</span></div>
@@ -127,16 +173,42 @@
         <h1>Confirm Your Login</h1>
 
         <p>
-            A login was requested for your WIN Business Suite account.
-            Press the button below only if you initiated this login.
+            Enter the six-digit confirmation code sent to your email
+            address to complete your login.
         </p>
 
-        <button id="confirmLoginButton" type="button">
-            Confirm Login
+        <div class="email-display" id="confirmationEmail">
+            Loading email address...
+        </div>
+
+        <form id="confirmLoginForm">
+            <label for="confirmationCode">Six-Digit Confirmation Code</label>
+
+            <input
+                type="text"
+                id="confirmationCode"
+                name="code"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                pattern="[0-9]{6}"
+                minlength="6"
+                maxlength="6"
+                placeholder="000000"
+                aria-label="Six-digit confirmation code"
+                required
+            >
+
+            <button id="confirmLoginButton" type="submit">
+                Confirm Login
+            </button>
+        </form>
+
+        <button id="resendLoginCodeButton" type="button">
+            Resend Code
         </button>
 
         <p id="confirmationMessage" role="status" aria-live="polite">
-            This confirmation link is valid for 10 minutes and can only be used once.
+            Your code expires after 10 minutes and can only be used once.
         </p>
 
         <a class="back-link" href="/login.html">Back to Login</a>

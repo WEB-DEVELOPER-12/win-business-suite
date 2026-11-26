@@ -1,4 +1,6 @@
 
+"use strict";
+
 const pool = require("./postgresDatabase");
 
 const requiredTables = [
@@ -34,6 +36,8 @@ const requiredTables = [
     "email_request_limits",
     "email_security_events",
     "email_tokens",
+    "login_confirmation_codes",
+    "login_confirmation_attempt_limits",
     "finance_expenses",
     "finance_other_income",
     "maintenance_events",
