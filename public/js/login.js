@@ -13,10 +13,8 @@ if (loginForm && loginButton && loginMessage) {
         loginButton.textContent = "Logging In...";
         loginMessage.textContent = "";
 
-        const formData = {
-            email: document.getElementById("email").value.trim(),
-            password: document.getElementById("password").value
-        };
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
 
         try {
             const response = await fetch("/api/auth/login", {
@@ -25,44 +23,27 @@ if (loginForm && loginButton && loginMessage) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ email, password })
             });
 
-            let result = {};
+            const result = await response.json();
 
-            try {
-                result = await response.json();
-            } catch {
-                result = {};
-            }
-
-            if (response.ok && result.success && result.confirmationRequired) {
-                const email = result.email || formData.email;
-
-                loginMessage.textContent =
-                    "A six-digit login confirmation code has been sent to your email. Redirecting to the confirmation page...";
-
-                loginMessage.style.color = "green";
-
+            if (result.confirmationRequired) {
                 window.location.replace(
                     "/confirm-login.html?email=" +
-                    encodeURIComponent(email)
+                    encodeURIComponent(result.email || email)
                 );
-
                 return;
             }
 
             loginMessage.textContent =
                 result.message || "Login could not be completed.";
-
             loginMessage.style.color = "red";
 
         } catch (error) {
-            console.error("Login request failed:", error);
-
+            console.error("Login failed:", error);
             loginMessage.textContent =
-                "Unable to connect to the server. Please try again.";
-
+                "Unable to connect. Please try again.";
             loginMessage.style.color = "red";
 
         } finally {
