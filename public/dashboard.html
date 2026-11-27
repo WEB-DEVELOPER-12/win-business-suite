@@ -86,9 +86,7 @@
 
                 <div class="topbar-actions">
 
-                    <!-- CUSTOMER NOTIFICATION BELL -->
                     <div class="notification-wrapper">
-
                         <a
                             href="/notifications.html"
                             id="notificationBell"
@@ -117,9 +115,7 @@
                                 hidden
                             >0</span>
                         </a>
-
                     </div>
-                    <!-- END CUSTOMER NOTIFICATION BELL -->
 
                     <div class="topbar-user">
                         <div class="user-avatar">W</div>
@@ -146,8 +142,12 @@
                 </div>
             </section>
 
-            <!-- SUBSCRIPTION CARD -->
-            <section class="win-subscription-card" id="subscriptionCard">
+            <!-- SUBSCRIPTION CARD - SHOWN INSIDE POPUP -->
+            <section
+                class="win-subscription-card"
+                id="subscriptionCard"
+                style="display: none;"
+            >
 
                 <div class="subscription-header">
                     <div>
@@ -181,7 +181,7 @@
                     </div>
 
                     <a href="/upgrade.html" class="btn-primary">
-                        Upgrade to WIN Pro
+                        Subscribe to WIN Pro
                     </a>
                 </div>
 
@@ -190,6 +190,7 @@
             </section>
             <!-- END SUBSCRIPTION CARD -->
 
+            <!-- QUICK ACTIONS -->
             <section class="command-section">
                 <div class="section-heading">
                     <div>
@@ -277,171 +278,6 @@
             </section>
             <!-- END BUSINESS OVERVIEW -->
 
-            <!-- HOW TO USE WIN BUSINESS SUITE -->
-            <section class="command-section how-to-section">
-
-                <div class="section-heading">
-                    <div>
-                        <p class="eyebrow">YOUR STEP-BY-STEP GUIDE</p>
-                        <h2>How to Use WIN Business Suite</h2>
-                        <p>
-                            Follow these simple steps to set up your business
-                            and manage your daily activities.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="how-to-list">
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">01</div>
-                        <div class="how-to-content">
-                            <h3>Set Up Your Business</h3>
-                            <p>
-                                Start by entering your business information,
-                                including its name and other important details.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                Enter your shop name, business type and contact details.
-                            </p>
-                            <a href="/business-settings.html" class="how-to-link">
-                                Set up your business →
-                            </a>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">02</div>
-                        <div class="how-to-content">
-                            <h3>Add Your Products to Inventory</h3>
-                            <p>
-                                Open Inventory and add the products your business sells.
-                                Enter each product's name and the required product details.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                Add sugar, cooking oil, rice or any product your shop sells.
-                            </p>
-                            <a href="/inventory.html" class="how-to-link">
-                                Open Inventory →
-                            </a>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">03</div>
-                        <div class="how-to-content">
-                            <h3>Set Buying and Selling Prices</h3>
-                            <p>
-                                Enter how much you pay to obtain each product
-                                and how much you charge your customers.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                If you buy a product for KSh 80 and sell it for
-                                KSh 100, enter KSh 80 as the buying price and
-                                KSh 100 as the selling price.
-                            </p>
-                            <a href="/inventory.html" class="how-to-link">
-                                Set product prices →
-                            </a>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">04</div>
-                        <div class="how-to-content">
-                            <h3>Enter Product Quantities</h3>
-                            <p>
-                                Record how many units of each product are
-                                currently available. Set a minimum stock level
-                                to help identify products that need attention.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                Enter 50 units as the available quantity and
-                                5 units as the minimum stock level.
-                            </p>
-                            <a href="/inventory.html" class="how-to-link">
-                                Manage quantities →
-                            </a>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">05</div>
-                        <div class="how-to-content">
-                            <h3>Record Your Sales</h3>
-                            <p>
-                                Use Sales &amp; POS whenever a customer buys
-                                something. Select the product, enter the
-                                quantity and record the payment.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                A customer buys 2 products at KSh 100 each.
-                                Record the sale and the amount received.
-                            </p>
-                            <a href="/sales.html" class="how-to-link">
-                                Open Sales &amp; POS →
-                            </a>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">06</div>
-                        <div class="how-to-content">
-                            <h3>Track Your Business Expenses</h3>
-                            <p>
-                                Record money spent on running your business
-                                so that you can understand your costs.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                Record rent, electricity, transport or other
-                                business expenses.
-                            </p>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">07</div>
-                        <div class="how-to-content">
-                            <h3>Understand Your Business Overview</h3>
-                            <p>
-                                Use the figures on your Dashboard to follow
-                                your sales, profit, expenses and inventory value.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Tip:</strong>
-                                Check your figures regularly to understand
-                                how your business is performing.
-                            </p>
-                        </div>
-                    </article>
-
-                    <article class="how-to-card">
-                        <div class="how-to-number">08</div>
-                        <div class="how-to-content">
-                            <h3>Use WIN AI</h3>
-                            <p>
-                                WIN AI is intended to help you understand
-                                your business information and make smarter
-                                business decisions.
-                            </p>
-                            <p class="how-to-example">
-                                <strong>Example:</strong>
-                                Ask for help understanding business performance
-                                or identifying areas that need attention.
-                            </p>
-                        </div>
-                    </article>
-
-                </div>
-            </section>
-            <!-- END HOW TO USE GUIDE -->
-
             <footer class="dashboard-footer">
                 <p>WIN Business Suite © 2026</p>
                 <p>Manage Everything. Grow Smarter.</p>
@@ -450,7 +286,47 @@
         </main>
     </div>
 
-    <!-- Dashboard and notification scripts -->
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="mobile-bottom-nav" aria-label="Main mobile navigation">
+
+        <a
+            href="/dashboard.html"
+            class="mobile-nav-link active"
+            aria-current="page"
+        >
+            <span class="mobile-nav-icon" aria-hidden="true">⌂</span>
+            <span>Overview</span>
+        </a>
+
+        <a href="/sales.html" class="mobile-nav-link">
+            <span class="mobile-nav-icon" aria-hidden="true">▤</span>
+            <span>Sales &amp; POS</span>
+        </a>
+
+        <a href="/inventory.html" class="mobile-nav-link">
+            <span class="mobile-nav-icon" aria-hidden="true">▦</span>
+            <span>Inventory</span>
+        </a>
+
+        <a href="/debtors.html" class="mobile-nav-link">
+            <span class="mobile-nav-icon" aria-hidden="true">📒</span>
+            <span>Debtor Management</span>
+        </a>
+
+        <a href="/finance.html" class="mobile-nav-link">
+            <span class="mobile-nav-icon" aria-hidden="true">▥</span>
+            <span>Finance</span>
+        </a>
+
+        <a href="#" class="mobile-nav-link">
+            <span class="mobile-nav-icon" aria-hidden="true">✦</span>
+            <span>WIN AI</span>
+        </a>
+
+    </nav>
+    <!-- END MOBILE BOTTOM NAVIGATION -->
+
+    <!-- DASHBOARD AND NOTIFICATION SCRIPTS -->
     <script src="/js/dashboard.js"></script>
     <script src="/js/notifications.js"></script>
     <script src="/js/notification-popup.js"></script>
@@ -474,12 +350,16 @@
             document.body.classList.add("light-mode");
         }
 
-        const welcomeBusiness = document.getElementById("businessNameWelcome");
-        const businessNameElement = document.getElementById("businessName");
+        const welcomeBusiness =
+            document.getElementById("businessNameWelcome");
+
+        const businessNameElement =
+            document.getElementById("businessName");
 
         const updateWelcomeBusiness = () => {
             if (welcomeBusiness && businessNameElement) {
-                welcomeBusiness.textContent = businessNameElement.textContent;
+                welcomeBusiness.textContent =
+                    businessNameElement.textContent;
             }
         };
 

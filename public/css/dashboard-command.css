@@ -1,6 +1,7 @@
 
 /* =========================================
    WIN BUSINESS SUITE — COMMAND CENTRE
+   Responsive dashboard styling
    ========================================= */
 
 body.win-dashboard {
@@ -50,6 +51,7 @@ body.win-dashboard {
     font-size: 24px;
     font-weight: 900;
     border-radius: 12px;
+    flex-shrink: 0;
 }
 
 .sidebar-brand strong {
@@ -153,6 +155,7 @@ body.win-dashboard {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 15px;
     border-bottom: 1px solid #1e2d42;
     margin-bottom: 30px;
 }
@@ -170,10 +173,17 @@ body.win-dashboard {
     color: #f1f5f9;
 }
 
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
 .topbar-user {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
 }
 
 .user-avatar {
@@ -185,6 +195,7 @@ body.win-dashboard {
     background: #164e63;
     color: #67e8f9;
     font-weight: 800;
+    flex-shrink: 0;
 }
 
 .topbar-user strong,
@@ -271,6 +282,7 @@ body.win-dashboard {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 18px;
 }
 
@@ -333,6 +345,7 @@ body.win-dashboard {
     background: #123c50;
     color: #67e8f9;
     font-size: 20px;
+    flex-shrink: 0;
 }
 
 .quick-action strong {
@@ -348,6 +361,7 @@ body.win-dashboard {
 }
 
 .overview-card {
+    min-width: 0;
     background: #121f32;
     border: 1px solid #273951;
     border-radius: 13px;
@@ -358,6 +372,7 @@ body.win-dashboard {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
 }
 
 .overview-icon {
@@ -369,6 +384,7 @@ body.win-dashboard {
     background: #123c50;
     color: #67e8f9;
     font-size: 19px;
+    flex-shrink: 0;
 }
 
 .overview-card-top small {
@@ -381,6 +397,7 @@ body.win-dashboard {
     color: #f8fafc;
     font-size: 25px;
     margin: 20px 0 6px;
+    overflow-wrap: anywhere;
 }
 
 .overview-card p {
@@ -405,6 +422,7 @@ body.win-dashboard {
 
 .module-card {
     display: block;
+    min-width: 0;
     min-height: 175px;
     padding: 20px;
     border: 1px solid #273951;
@@ -503,6 +521,7 @@ body.win-dashboard {
     color: #67e8f9;
     font-size: 25px;
     margin: 8px 0;
+    overflow-wrap: anywhere;
 }
 
 .win-dashboard .subscription-footer {
@@ -527,6 +546,7 @@ body.win-dashboard {
 .win-dashboard .subscription-notice {
     color: #a8bfd2;
     font-size: 11px;
+    line-height: 1.6;
 }
 
 /* FOOTER */
@@ -539,6 +559,12 @@ body.win-dashboard {
     border-top: 1px solid #25364b;
     color: #71839d;
     font-size: 10px;
+}
+
+/* MOBILE NAVIGATION - HIDDEN ON DESKTOP */
+
+.mobile-bottom-nav {
+    display: none;
 }
 
 /* LIGHT MODE */
@@ -622,7 +648,7 @@ body.win-dashboard {
     color: #64748b;
 }
 
-/* RESPONSIVE */
+/* TABLET */
 
 @media (max-width: 1100px) {
     .overview-grid,
@@ -633,21 +659,35 @@ body.win-dashboard {
     .quick-actions-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .dashboard-main {
+        padding-left: 25px;
+        padding-right: 25px;
+    }
 }
+
+/* MOBILE */
 
 @media (max-width: 760px) {
     .dashboard-layout {
         display: block;
+        min-height: 100vh;
     }
 
     .dashboard-sidebar {
         width: 100%;
         min-width: 0;
-        padding: 12px;
+        padding: 12px 15px;
+        border-right: 0;
+        border-bottom: 1px solid #223149;
     }
 
     .sidebar-brand {
-        padding-bottom: 12px;
+        padding: 3px 5px 12px;
+    }
+
+    .sidebar-brand strong {
+        font-size: 18px;
     }
 
     .sidebar-section {
@@ -662,22 +702,26 @@ body.win-dashboard {
 
     .sidebar-label {
         width: 100%;
+        margin-bottom: 5px;
     }
 
     .sidebar-link {
         width: auto;
         padding: 9px;
-        font-size: 10px;
-    }
-
-    .sidebar-link span {
-        width: auto;
+        margin: 2px 0;
+        font-size: 11px;
     }
 
     .sidebar-bottom {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
         margin-top: 5px;
+    }
+
+    .sidebar-bottom .sidebar-label {
+        width: 100%;
     }
 
     .sidebar-footer {
@@ -685,52 +729,336 @@ body.win-dashboard {
     }
 
     .dashboard-main {
-        padding: 0 15px 20px;
+        padding: 0 16px 110px;
     }
 
     .dashboard-topbar {
-        min-height: 75px;
-        margin-bottom: 20px;
+        min-height: 70px;
+        margin-bottom: 18px;
+    }
+
+    .dashboard-topbar h2 {
+        font-size: 18px;
+    }
+
+    .topbar-user {
+        gap: 8px;
+    }
+
+    .user-avatar {
+        width: 35px;
+        height: 35px;
     }
 
     .command-welcome {
-        min-height: 175px;
-        padding: 22px;
+        min-height: 160px;
+        padding: 23px;
+        margin-bottom: 27px;
+        border-radius: 15px;
+    }
+
+    .command-welcome h1 {
+        font-size: clamp(23px, 6vw, 30px);
+    }
+
+    .command-welcome p:not(.eyebrow) {
+        font-size: 12px;
+        line-height: 1.6;
     }
 
     .welcome-decoration {
         display: none;
     }
 
-    .overview-grid,
-    .modules-grid {
+    .command-section {
+        margin-bottom: 30px;
+    }
+
+    .section-heading {
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+
+    .section-heading h2 {
+        font-size: 19px;
+    }
+
+    .section-heading > div > p:last-child:not(.eyebrow) {
+        font-size: 11px;
+    }
+
+    .overview-period {
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    .quick-actions-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
     }
 
-    .quick-actions-grid {
+    .quick-action {
+        min-height: 65px;
+        padding: 11px;
         gap: 9px;
+    }
+
+    .quick-action span {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .quick-action strong {
+        font-size: 10px;
+    }
+
+    .overview-grid,
+    .modules-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 11px;
     }
 
     .overview-card,
     .module-card {
-        padding: 14px;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .overview-card h3 {
+        font-size: 21px;
+        margin-top: 15px;
+    }
+
+    .overview-card-top small {
+        font-size: 8px;
+    }
+
+    .module-card {
+        min-height: 165px;
+    }
+
+    .module-card h3 {
+        font-size: 13px;
+    }
+
+    .module-card p {
+        font-size: 10px;
+    }
+
+    .win-dashboard .win-subscription-card {
+        margin: 25px 0;
+        padding: 20px 17px;
+        border-radius: 14px;
+    }
+
+    .win-dashboard .subscription-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .win-dashboard .subscription-header h2 {
+        font-size: 21px;
+    }
+
+    .win-dashboard .subscription-countdown {
+        margin: 17px 0;
+        padding: 15px;
+    }
+
+    .win-dashboard .subscription-countdown h2 {
+        font-size: 22px;
     }
 
     .win-dashboard .subscription-footer {
-        align-items: flex-start;
+        align-items: stretch;
         flex-direction: column;
+        gap: 12px;
+    }
+
+    .win-dashboard .subscription-footer .btn-primary {
+        width: 100%;
     }
 
     .win-dashboard .dashboard-footer {
         flex-direction: column;
+        gap: 8px;
+        padding-bottom: 15px;
+    }
+
+    /* FIXED MOBILE BOTTOM NAVIGATION */
+
+    .mobile-bottom-nav {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        align-items: stretch;
+        gap: 0;
+        min-height: 66px;
+        padding: 7px 3px calc(7px + env(safe-area-inset-bottom));
+        background: #101b2d;
+        border-top: 1px solid #263b55;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    .mobile-nav-link {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px 1px;
+        border-radius: 9px;
+        color: #9aacc2;
+        text-decoration: none;
+        font-size: 9px;
+        font-weight: 600;
+        text-align: center;
+        line-height: 1.15;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .mobile-nav-icon {
+        display: block;
+        font-size: 19px;
+        line-height: 1;
+    }
+
+    .mobile-nav-link:hover,
+    .mobile-nav-link.active {
+        color: #38d7ed;
+        background: #17324a;
+    }
+
+    .mobile-nav-link:focus-visible {
+        outline: 2px solid #22d3ee;
+        outline-offset: -2px;
+    }
+
+    /* LIGHT MODE MOBILE NAVIGATION */
+
+    .win-dashboard.light-mode .mobile-bottom-nav {
+        background: #fff;
+        border-top-color: #dce5ef;
+        box-shadow: 0 -5px 20px rgba(15, 23, 42, 0.09);
+    }
+
+    .win-dashboard.light-mode .mobile-nav-link {
+        color: #64748b;
+    }
+
+    .win-dashboard.light-mode .mobile-nav-link:hover,
+    .win-dashboard.light-mode .mobile-nav-link.active {
+        color: #087e9a;
+        background: #e0f7fb;
+    }
+
+    .win-dashboard.light-mode .dashboard-sidebar {
+        border-color: #e2e8f0;
     }
 }
 
-@media (max-width: 380px) {
+/* SMALL PHONES */
+
+@media (max-width: 420px) {
+    .dashboard-main {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .dashboard-topbar {
+        min-height: 65px;
+    }
+
+    .dashboard-topbar h2 {
+        font-size: 16px;
+    }
+
+    .topbar-user strong {
+        font-size: 10px;
+    }
+
+    .topbar-user small {
+        font-size: 9px;
+    }
+
+    .command-welcome {
+        padding: 19px;
+    }
+
+    .quick-actions-grid {
+        gap: 8px;
+    }
+
+    .quick-action {
+        padding: 9px;
+        gap: 7px;
+    }
+
+    .quick-action strong {
+        font-size: 9px;
+    }
+
+    .overview-grid,
+    .modules-grid {
+        gap: 8px;
+    }
+
+    .overview-card,
+    .module-card {
+        padding: 12px;
+    }
+
+    .overview-card h3 {
+        font-size: 19px;
+    }
+
+    .module-card {
+        min-height: 155px;
+    }
+
+    .mobile-nav-link {
+        font-size: 8px;
+    }
+
+    .mobile-nav-icon {
+        font-size: 18px;
+    }
+}
+
+/* VERY SMALL PHONES */
+
+@media (max-width: 340px) {
     .overview-grid,
     .modules-grid,
     .quick-actions-grid {
         grid-template-columns: 1fr;
+    }
+
+    .overview-card,
+    .module-card {
+        padding: 16px;
+    }
+
+    .quick-action {
+        min-height: 58px;
+    }
+
+    .mobile-bottom-nav {
+        padding-left: 1px;
+        padding-right: 1px;
+    }
+
+    .mobile-nav-link {
+        font-size: 7px;
+    }
+
+    .mobile-nav-icon {
+        font-size: 17px;
     }
 }
